@@ -5,11 +5,11 @@ spring:
     name: hmdp
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/hmdp?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://127.0.0.1:3306/hmdp?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: 123
+    password: 123456
   redis:
-    host: 192.168.150.101
+    host: 127.0.0.1
     port: 6379
     password: 123321
     lettuce:
@@ -22,6 +22,12 @@ spring:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
 mybatis-plus:
   type-aliases-package: com.hmdp.entity # 别名扫描包
+dashscope:
+  api-key: ${DASHSCOPE_API_KEY:sk-f24f19825c6b4f9dafd04414e550ee83}
+  chat-model: qwen-plus
+  embedding-model: text-embedding-v3
+tavily:
+  api-key: ${TAVILY_API_KEY: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}
 logging:
   level:
     com.hmdp: debug

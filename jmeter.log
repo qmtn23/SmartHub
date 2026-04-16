@@ -1,0 +1,653 @@
+2026-04-01 11:49:07,444 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
+2026-04-01 11:49:07,475 INFO o.a.j.JMeter: Loading user properties from: D:\develop\apache-jmeter-5.6.3\bin\user.properties
+2026-04-01 11:49:07,476 INFO o.a.j.JMeter: Loading system properties from: D:\develop\apache-jmeter-5.6.3\bin\system.properties
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: Copyright (c) 1998-2024 The Apache Software Foundation
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: Version 5.6.3
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: java.version=17
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: java.vm.name=Java HotSpot(TM) 64-Bit Server VM
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: os.name=Windows 10
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: os.arch=amd64
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: os.version=10.0
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: file.encoding=GBK
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: java.awt.headless=true
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: Max memory     =1073741824
+2026-04-01 11:49:07,485 INFO o.a.j.JMeter: Available Processors =16
+2026-04-01 11:49:07,497 INFO o.a.j.JMeter: Default Locale=English (EN)
+2026-04-01 11:49:07,497 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
+2026-04-01 11:49:07,497 INFO o.a.j.JMeter: JMeterHome=D:\develop\apache-jmeter-5.6.3
+2026-04-01 11:49:07,497 INFO o.a.j.JMeter: user.dir  =D:\cursor_coding\hm-dianping
+2026-04-01 11:49:07,498 INFO o.a.j.JMeter: PWD       =D:\cursor_coding\hm-dianping
+2026-04-01 11:49:12,538 INFO o.a.j.JMeter: IP: 26.221.148.200 Name: qmtn FullName: qmtn
+2026-04-01 11:49:12,554 INFO o.a.j.s.FileServer: Default base='D:\cursor_coding\hm-dianping'
+2026-04-01 11:49:12,555 INFO o.a.j.s.FileServer: Set new base='D:\cursor_coding\hm-dianping\jmeter'
+2026-04-01 11:49:12,745 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
+2026-04-01 11:49:12,774 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
+2026-04-01 11:49:12,778 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
+2026-04-01 11:49:12,779 INFO o.a.j.s.SaveService: Loading file: D:\cursor_coding\hm-dianping\jmeter\seckill_test.jmx
+2026-04-01 11:49:12,862 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2026-04-01 11:49:12,862 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2026-04-01 11:49:12,862 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2026-04-01 11:49:12,862 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2026-04-01 11:49:12,862 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
+2026-04-01 11:49:12,862 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
+2026-04-01 11:49:12,899 INFO o.a.j.JMeter: Creating summariser <summary>
+2026-04-01 11:49:12,915 INFO o.a.j.e.StandardJMeterEngine: Running the test!
+2026-04-01 11:49:12,917 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2026-04-01 11:49:12,917 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2026-04-01 11:49:12,919 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must contain the string: '.functions.'
+2026-04-01 11:49:12,919 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must not contain the string: '.gui.'
+2026-04-01 11:49:13,019 INFO o.a.j.JMeter: Running test (1775015353019)
+2026-04-01 11:49:13,037 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : 秒杀线程组
+2026-04-01 11:49:13,037 INFO o.a.j.e.StandardJMeterEngine: Starting 200 threads for group 秒杀线程组.
+2026-04-01 11:49:13,037 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2026-04-01 11:49:13,037 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=200 ramp-up=5 delayedStart=false
+2026-04-01 11:49:13,047 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-1
+2026-04-01 11:49:13,072 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-2
+2026-04-01 11:49:13,074 INFO o.a.j.p.h.s.HTTPHCAbstractImpl: Local host = qmtn
+2026-04-01 11:49:13,082 INFO o.a.j.p.h.s.HTTPHC4Impl: HTTP request retry count = 0
+2026-04-01 11:49:13,084 INFO o.a.j.s.SampleResult: Note: Sample TimeStamps are START times
+2026-04-01 11:49:13,084 INFO o.a.j.s.SampleResult: sampleresult.default.encoding is set to UTF-8
+2026-04-01 11:49:13,084 INFO o.a.j.s.SampleResult: sampleresult.useNanoTime=true
+2026-04-01 11:49:13,084 INFO o.a.j.s.SampleResult: sampleresult.nanoThreadSleep=5000
+2026-04-01 11:49:13,095 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-3
+2026-04-01 11:49:13,121 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2026-04-01 11:49:13,121 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
+2026-04-01 11:49:13,122 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-4
+2026-04-01 11:49:13,155 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-5
+2026-04-01 11:49:13,171 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-6
+2026-04-01 11:49:13,195 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-7
+2026-04-01 11:49:13,215 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-8
+2026-04-01 11:49:13,246 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-9
+2026-04-01 11:49:13,277 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-10
+2026-04-01 11:49:13,302 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-11
+2026-04-01 11:49:13,328 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-12
+2026-04-01 11:49:13,353 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-13
+2026-04-01 11:49:13,380 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-14
+2026-04-01 11:49:13,400 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-15
+2026-04-01 11:49:13,415 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-16
+2026-04-01 11:49:13,447 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-17
+2026-04-01 11:49:13,478 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-18
+2026-04-01 11:49:13,494 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-19
+2026-04-01 11:49:13,519 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-20
+2026-04-01 11:49:13,541 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-21
+2026-04-01 11:49:13,567 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-22
+2026-04-01 11:49:13,594 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-23
+2026-04-01 11:49:13,627 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-24
+2026-04-01 11:49:13,646 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-25
+2026-04-01 11:49:13,678 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-26
+2026-04-01 11:49:13,691 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-27
+2026-04-01 11:49:13,720 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-28
+2026-04-01 11:49:13,751 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-29
+2026-04-01 11:49:13,776 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-30
+2026-04-01 11:49:13,800 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-31
+2026-04-01 11:49:13,828 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-32
+2026-04-01 11:49:13,845 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-33
+2026-04-01 11:49:13,865 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-34
+2026-04-01 11:49:13,897 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-35
+2026-04-01 11:49:13,919 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-36
+2026-04-01 11:49:13,945 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-37
+2026-04-01 11:49:13,964 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-38
+2026-04-01 11:49:13,989 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-39
+2026-04-01 11:49:14,027 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-40
+2026-04-01 11:49:14,045 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-41
+2026-04-01 11:49:14,069 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-42
+2026-04-01 11:49:14,093 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-43
+2026-04-01 11:49:14,119 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-44
+2026-04-01 11:49:14,143 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-45
+2026-04-01 11:49:14,172 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-46
+2026-04-01 11:49:14,197 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-47
+2026-04-01 11:49:14,228 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-48
+2026-04-01 11:49:14,244 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-49
+2026-04-01 11:49:14,268 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-50
+2026-04-01 11:49:14,294 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-51
+2026-04-01 11:49:14,321 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-52
+2026-04-01 11:49:14,344 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-53
+2026-04-01 11:49:14,368 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-54
+2026-04-01 11:49:14,394 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-55
+2026-04-01 11:49:14,417 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-56
+2026-04-01 11:49:14,440 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-57
+2026-04-01 11:49:14,474 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-58
+2026-04-01 11:49:14,497 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-59
+2026-04-01 11:49:14,529 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-60
+2026-04-01 11:49:14,551 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-61
+2026-04-01 11:49:14,578 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-62
+2026-04-01 11:49:14,600 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-63
+2026-04-01 11:49:14,622 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-64
+2026-04-01 11:49:14,652 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-65
+2026-04-01 11:49:14,671 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-66
+2026-04-01 11:49:14,700 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-67
+2026-04-01 11:49:14,727 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-68
+2026-04-01 11:49:14,753 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-69
+2026-04-01 11:49:14,768 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-70
+2026-04-01 11:49:14,801 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-71
+2026-04-01 11:49:14,823 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-72
+2026-04-01 11:49:14,839 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-73
+2026-04-01 11:49:14,873 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-74
+2026-04-01 11:49:14,892 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-75
+2026-04-01 11:49:14,915 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-76
+2026-04-01 11:49:14,947 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-77
+2026-04-01 11:49:14,973 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-78
+2026-04-01 11:49:14,988 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-79
+2026-04-01 11:49:15,016 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-80
+2026-04-01 11:49:15,046 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-81
+2026-04-01 11:49:15,067 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-82
+2026-04-01 11:49:15,092 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-83
+2026-04-01 11:49:15,115 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-84
+2026-04-01 11:49:15,145 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-85
+2026-04-01 11:49:15,166 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-86
+2026-04-01 11:49:15,197 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-87
+2026-04-01 11:49:15,223 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-88
+2026-04-01 11:49:15,240 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-89
+2026-04-01 11:49:15,273 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-90
+2026-04-01 11:49:15,298 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-91
+2026-04-01 11:49:15,323 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-92
+2026-04-01 11:49:15,339 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-93
+2026-04-01 11:49:15,370 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-94
+2026-04-01 11:49:15,398 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-95
+2026-04-01 11:49:15,417 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-96
+2026-04-01 11:49:15,448 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-97
+2026-04-01 11:49:15,485 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-98
+2026-04-01 11:49:15,498 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-99
+2026-04-01 11:49:15,517 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-100
+2026-04-01 11:49:15,539 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-101
+2026-04-01 11:49:15,567 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-102
+2026-04-01 11:49:15,596 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-103
+2026-04-01 11:49:15,623 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-104
+2026-04-01 11:49:15,648 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-105
+2026-04-01 11:49:15,672 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-106
+2026-04-01 11:49:15,705 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-107
+2026-04-01 11:49:15,725 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-108
+2026-04-01 11:49:15,754 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-109
+2026-04-01 11:49:15,766 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-110
+2026-04-01 11:49:15,808 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-111
+2026-04-01 11:49:15,827 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-112
+2026-04-01 11:49:15,855 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-113
+2026-04-01 11:49:15,868 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-114
+2026-04-01 11:49:15,893 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-115
+2026-04-01 11:49:15,919 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-116
+2026-04-01 11:49:15,947 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-117
+2026-04-01 11:49:15,964 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-118
+2026-04-01 11:49:15,994 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-119
+2026-04-01 11:49:16,026 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-120
+2026-04-01 11:49:16,046 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-121
+2026-04-01 11:49:16,078 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-122
+2026-04-01 11:49:16,095 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-123
+2026-04-01 11:49:16,116 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-124
+2026-04-01 11:49:16,139 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-125
+2026-04-01 11:49:16,167 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-126
+2026-04-01 11:49:16,189 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-127
+2026-04-01 11:49:16,223 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-128
+2026-04-01 11:49:16,240 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-129
+2026-04-01 11:49:16,269 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-130
+2026-04-01 11:49:16,297 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-131
+2026-04-01 11:49:16,318 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-132
+2026-04-01 11:49:16,342 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-133
+2026-04-01 11:49:16,369 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-8
+2026-04-01 11:49:16,369 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-8
+2026-04-01 11:49:16,371 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-134
+2026-04-01 11:49:16,398 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-135
+2026-04-01 11:49:16,406 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-5
+2026-04-01 11:49:16,406 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-5
+2026-04-01 11:49:16,418 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-3
+2026-04-01 11:49:16,418 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-3
+2026-04-01 11:49:16,419 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-4
+2026-04-01 11:49:16,419 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-4
+2026-04-01 11:49:16,426 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-136
+2026-04-01 11:49:16,452 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-137
+2026-04-01 11:49:16,474 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-138
+2026-04-01 11:49:16,498 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-139
+2026-04-01 11:49:16,528 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-140
+2026-04-01 11:49:16,543 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-141
+2026-04-01 11:49:16,553 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-7
+2026-04-01 11:49:16,553 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-7
+2026-04-01 11:49:16,563 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-9
+2026-04-01 11:49:16,563 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-9
+2026-04-01 11:49:16,578 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-142
+2026-04-01 11:49:16,600 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-143
+2026-04-01 11:49:16,622 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-144
+2026-04-01 11:49:16,651 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-145
+2026-04-01 11:49:16,660 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-2
+2026-04-01 11:49:16,662 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-2
+2026-04-01 11:49:16,663 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-6
+2026-04-01 11:49:16,663 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-6
+2026-04-01 11:49:16,672 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-146
+2026-04-01 11:49:16,681 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-10
+2026-04-01 11:49:16,681 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-10
+2026-04-01 11:49:16,690 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-147
+2026-04-01 11:49:16,731 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-148
+2026-04-01 11:49:16,746 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-1
+2026-04-01 11:49:16,746 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-1
+2026-04-01 11:49:16,750 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-149
+2026-04-01 11:49:16,766 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-150
+2026-04-01 11:49:16,790 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-151
+2026-04-01 11:49:16,824 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-152
+2026-04-01 11:49:16,847 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-153
+2026-04-01 11:49:16,875 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-154
+2026-04-01 11:49:16,888 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-155
+2026-04-01 11:49:16,922 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-156
+2026-04-01 11:49:16,940 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-157
+2026-04-01 11:49:16,965 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-158
+2026-04-01 11:49:16,997 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-159
+2026-04-01 11:49:17,022 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-160
+2026-04-01 11:49:17,031 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-11
+2026-04-01 11:49:17,031 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-11
+2026-04-01 11:49:17,045 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-161
+2026-04-01 11:49:17,066 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-12
+2026-04-01 11:49:17,066 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-12
+2026-04-01 11:49:17,067 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-162
+2026-04-01 11:49:17,098 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-163
+2026-04-01 11:49:17,121 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-164
+2026-04-01 11:49:17,153 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-165
+2026-04-01 11:49:17,177 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-166
+2026-04-01 11:49:17,191 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-167
+2026-04-01 11:49:17,216 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-168
+2026-04-01 11:49:17,250 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-169
+2026-04-01 11:49:17,272 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-170
+2026-04-01 11:49:17,292 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-171
+2026-04-01 11:49:17,318 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-172
+2026-04-01 11:49:17,340 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-173
+2026-04-01 11:49:17,340 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-13
+2026-04-01 11:49:17,340 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-13
+2026-04-01 11:49:17,351 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-15
+2026-04-01 11:49:17,351 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-15
+2026-04-01 11:49:17,367 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-174
+2026-04-01 11:49:17,395 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-175
+2026-04-01 11:49:17,418 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-176
+2026-04-01 11:49:17,448 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-177
+2026-04-01 11:49:17,474 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-178
+2026-04-01 11:49:17,490 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-179
+2026-04-01 11:49:17,529 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-180
+2026-04-01 11:49:17,545 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-181
+2026-04-01 11:49:17,555 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-14
+2026-04-01 11:49:17,555 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-14
+2026-04-01 11:49:17,572 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-182
+2026-04-01 11:49:17,599 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-183
+2026-04-01 11:49:17,622 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-184
+2026-04-01 11:49:17,649 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-185
+2026-04-01 11:49:17,664 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-186
+2026-04-01 11:49:17,689 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-17
+2026-04-01 11:49:17,689 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-17
+2026-04-01 11:49:17,690 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-187
+2026-04-01 11:49:17,715 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-188
+2026-04-01 11:49:17,751 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-189
+2026-04-01 11:49:17,768 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-190
+2026-04-01 11:49:17,792 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-191
+2026-04-01 11:49:17,828 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-192
+2026-04-01 11:49:17,838 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-193
+2026-04-01 11:49:17,868 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-194
+2026-04-01 11:49:17,898 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-195
+2026-04-01 11:49:17,920 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-196
+2026-04-01 11:49:17,946 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-197
+2026-04-01 11:49:17,967 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-198
+2026-04-01 11:49:18,003 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-199
+2026-04-01 11:49:18,012 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-18
+2026-04-01 11:49:18,012 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-18
+2026-04-01 11:49:18,023 INFO o.a.j.t.JMeterThread: Thread started: 秒杀线程组 1-200
+2026-04-01 11:49:18,137 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-16
+2026-04-01 11:49:18,137 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-16
+2026-04-01 11:49:18,224 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-20
+2026-04-01 11:49:18,224 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-20
+2026-04-01 11:49:18,412 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-21
+2026-04-01 11:49:18,415 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-21
+2026-04-01 11:49:18,589 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-19
+2026-04-01 11:49:18,589 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-19
+2026-04-01 11:49:18,927 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-23
+2026-04-01 11:49:18,928 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-23
+2026-04-01 11:49:18,974 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-22
+2026-04-01 11:49:18,974 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-22
+2026-04-01 11:49:19,135 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-25
+2026-04-01 11:49:19,135 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-25
+2026-04-01 11:49:19,148 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-24
+2026-04-01 11:49:19,148 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-24
+2026-04-01 11:49:19,213 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-28
+2026-04-01 11:49:19,213 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-28
+2026-04-01 11:49:19,403 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-26
+2026-04-01 11:49:19,403 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-26
+2026-04-01 11:49:19,419 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-31
+2026-04-01 11:49:19,419 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-31
+2026-04-01 11:49:19,521 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-30
+2026-04-01 11:49:19,521 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-30
+2026-04-01 11:49:19,673 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-27
+2026-04-01 11:49:19,673 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-27
+2026-04-01 11:49:19,708 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-32
+2026-04-01 11:49:19,708 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-32
+2026-04-01 11:49:19,829 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-29
+2026-04-01 11:49:19,831 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-29
+2026-04-01 11:49:20,059 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-33
+2026-04-01 11:49:20,059 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-33
+2026-04-01 11:49:20,200 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-34
+2026-04-01 11:49:20,200 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-34
+2026-04-01 11:49:20,200 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-36
+2026-04-01 11:49:20,200 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-36
+2026-04-01 11:49:20,265 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-35
+2026-04-01 11:49:20,265 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-35
+2026-04-01 11:49:20,622 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-41
+2026-04-01 11:49:20,622 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-41
+2026-04-01 11:49:20,671 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-37
+2026-04-01 11:49:20,671 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-37
+2026-04-01 11:49:20,829 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-39
+2026-04-01 11:49:20,829 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-39
+2026-04-01 11:49:20,918 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-38
+2026-04-01 11:49:20,918 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-38
+2026-04-01 11:49:20,924 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-40
+2026-04-01 11:49:20,924 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-40
+2026-04-01 11:49:20,995 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-42
+2026-04-01 11:49:20,995 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-42
+2026-04-01 11:49:21,253 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-43
+2026-04-01 11:49:21,253 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-43
+2026-04-01 11:49:21,256 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-44
+2026-04-01 11:49:21,256 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-44
+2026-04-01 11:49:21,291 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-46
+2026-04-01 11:49:21,291 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-46
+2026-04-01 11:49:21,307 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-47
+2026-04-01 11:49:21,307 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-47
+2026-04-01 11:49:21,419 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-49
+2026-04-01 11:49:21,419 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-49
+2026-04-01 11:49:21,511 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-45
+2026-04-01 11:49:21,511 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-45
+2026-04-01 11:49:21,574 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-53
+2026-04-01 11:49:21,574 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-53
+2026-04-01 11:49:21,634 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-51
+2026-04-01 11:49:21,634 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-51
+2026-04-01 11:49:21,648 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-54
+2026-04-01 11:49:21,648 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-54
+2026-04-01 11:49:21,747 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-48
+2026-04-01 11:49:21,747 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-48
+2026-04-01 11:49:21,845 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-50
+2026-04-01 11:49:21,845 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-50
+2026-04-01 11:49:21,938 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-60
+2026-04-01 11:49:21,938 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-60
+2026-04-01 11:49:21,978 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-57
+2026-04-01 11:49:21,978 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-57
+2026-04-01 11:49:22,051 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-55
+2026-04-01 11:49:22,054 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-55
+2026-04-01 11:49:22,090 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-52
+2026-04-01 11:49:22,090 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-52
+2026-04-01 11:49:22,122 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-58
+2026-04-01 11:49:22,122 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-58
+2026-04-01 11:49:22,125 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-56
+2026-04-01 11:49:22,125 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-56
+2026-04-01 11:49:22,150 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-64
+2026-04-01 11:49:22,150 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-64
+2026-04-01 11:49:22,416 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-59
+2026-04-01 11:49:22,416 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-59
+2026-04-01 11:49:22,454 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-63
+2026-04-01 11:49:22,454 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-63
+2026-04-01 11:49:22,461 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-62
+2026-04-01 11:49:22,461 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-62
+2026-04-01 11:49:22,536 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-66
+2026-04-01 11:49:22,536 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-66
+2026-04-01 11:49:22,551 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-61
+2026-04-01 11:49:22,551 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-61
+2026-04-01 11:49:22,600 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-67
+2026-04-01 11:49:22,601 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-67
+2026-04-01 11:49:22,703 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-69
+2026-04-01 11:49:22,703 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-69
+2026-04-01 11:49:22,734 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-71
+2026-04-01 11:49:22,734 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-71
+2026-04-01 11:49:22,770 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-70
+2026-04-01 11:49:22,770 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-70
+2026-04-01 11:49:22,794 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-65
+2026-04-01 11:49:22,795 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-65
+2026-04-01 11:49:22,886 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-73
+2026-04-01 11:49:22,886 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-73
+2026-04-01 11:49:22,904 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-68
+2026-04-01 11:49:22,904 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-68
+2026-04-01 11:49:22,930 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-72
+2026-04-01 11:49:22,930 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-72
+2026-04-01 11:49:22,965 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-80
+2026-04-01 11:49:22,965 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-80
+2026-04-01 11:49:22,969 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-77
+2026-04-01 11:49:22,969 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-77
+2026-04-01 11:49:23,024 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-74
+2026-04-01 11:49:23,024 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-74
+2026-04-01 11:49:23,077 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-78
+2026-04-01 11:49:23,077 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-78
+2026-04-01 11:49:23,100 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-75
+2026-04-01 11:49:23,100 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-75
+2026-04-01 11:49:23,113 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-79
+2026-04-01 11:49:23,113 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-79
+2026-04-01 11:49:23,189 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-76
+2026-04-01 11:49:23,189 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-76
+2026-04-01 11:49:23,195 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-82
+2026-04-01 11:49:23,195 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-82
+2026-04-01 11:49:23,222 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-81
+2026-04-01 11:49:23,222 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-81
+2026-04-01 11:49:23,229 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-83
+2026-04-01 11:49:23,229 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-83
+2026-04-01 11:49:23,373 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-85
+2026-04-01 11:49:23,373 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-85
+2026-04-01 11:49:23,397 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-84
+2026-04-01 11:49:23,397 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-84
+2026-04-01 11:49:23,425 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-87
+2026-04-01 11:49:23,425 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-87
+2026-04-01 11:49:23,492 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-86
+2026-04-01 11:49:23,492 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-86
+2026-04-01 11:49:23,494 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-88
+2026-04-01 11:49:23,494 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-88
+2026-04-01 11:49:23,507 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-96
+2026-04-01 11:49:23,507 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-96
+2026-04-01 11:49:23,528 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-90
+2026-04-01 11:49:23,528 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-90
+2026-04-01 11:49:23,540 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-93
+2026-04-01 11:49:23,540 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-93
+2026-04-01 11:49:23,556 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-89
+2026-04-01 11:49:23,556 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-89
+2026-04-01 11:49:23,634 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-91
+2026-04-01 11:49:23,634 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-91
+2026-04-01 11:49:23,654 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-97
+2026-04-01 11:49:23,654 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-97
+2026-04-01 11:49:23,752 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-98
+2026-04-01 11:49:23,752 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-98
+2026-04-01 11:49:23,759 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-99
+2026-04-01 11:49:23,759 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-99
+2026-04-01 11:49:23,760 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-102
+2026-04-01 11:49:23,760 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-102
+2026-04-01 11:49:23,761 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-95
+2026-04-01 11:49:23,761 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-95
+2026-04-01 11:49:23,761 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-92
+2026-04-01 11:49:23,761 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-92
+2026-04-01 11:49:23,845 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-94
+2026-04-01 11:49:23,845 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-94
+2026-04-01 11:49:23,852 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-103
+2026-04-01 11:49:23,852 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-103
+2026-04-01 11:49:23,852 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-100
+2026-04-01 11:49:23,852 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-100
+2026-04-01 11:49:23,910 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-104
+2026-04-01 11:49:23,910 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-104
+2026-04-01 11:49:23,936 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-105
+2026-04-01 11:49:23,936 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-105
+2026-04-01 11:49:23,940 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-101
+2026-04-01 11:49:23,940 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-101
+2026-04-01 11:49:23,940 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-107
+2026-04-01 11:49:23,940 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-107
+2026-04-01 11:49:23,941 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-108
+2026-04-01 11:49:23,941 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-108
+2026-04-01 11:49:24,042 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-109
+2026-04-01 11:49:24,042 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-109
+2026-04-01 11:49:24,070 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-111
+2026-04-01 11:49:24,070 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-111
+2026-04-01 11:49:24,078 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-112
+2026-04-01 11:49:24,078 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-112
+2026-04-01 11:49:24,088 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-106
+2026-04-01 11:49:24,089 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-106
+2026-04-01 11:49:24,115 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-110
+2026-04-01 11:49:24,115 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-110
+2026-04-01 11:49:24,134 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-118
+2026-04-01 11:49:24,134 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-118
+2026-04-01 11:49:24,157 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-116
+2026-04-01 11:49:24,158 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-116
+2026-04-01 11:49:24,157 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-113
+2026-04-01 11:49:24,158 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-113
+2026-04-01 11:49:24,212 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-119
+2026-04-01 11:49:24,212 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-119
+2026-04-01 11:49:24,219 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-115
+2026-04-01 11:49:24,219 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-115
+2026-04-01 11:49:24,251 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-123
+2026-04-01 11:49:24,251 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-123
+2026-04-01 11:49:24,257 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-120
+2026-04-01 11:49:24,257 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-120
+2026-04-01 11:49:24,279 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-117
+2026-04-01 11:49:24,279 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-117
+2026-04-01 11:49:24,290 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-125
+2026-04-01 11:49:24,290 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-125
+2026-04-01 11:49:24,290 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-121
+2026-04-01 11:49:24,290 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-121
+2026-04-01 11:49:24,317 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-126
+2026-04-01 11:49:24,317 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-126
+2026-04-01 11:49:24,319 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-114
+2026-04-01 11:49:24,319 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-124
+2026-04-01 11:49:24,319 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-114
+2026-04-01 11:49:24,319 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-124
+2026-04-01 11:49:24,338 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-129
+2026-04-01 11:49:24,338 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-129
+2026-04-01 11:49:24,349 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-130
+2026-04-01 11:49:24,349 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-130
+2026-04-01 11:49:24,353 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-131
+2026-04-01 11:49:24,353 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-131
+2026-04-01 11:49:24,385 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-133
+2026-04-01 11:49:24,385 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-133
+2026-04-01 11:49:24,390 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-122
+2026-04-01 11:49:24,390 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-122
+2026-04-01 11:49:24,390 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-134
+2026-04-01 11:49:24,390 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-134
+2026-04-01 11:49:24,390 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-136
+2026-04-01 11:49:24,390 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-136
+2026-04-01 11:49:24,409 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-127
+2026-04-01 11:49:24,409 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-127
+2026-04-01 11:49:24,419 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-128
+2026-04-01 11:49:24,419 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-128
+2026-04-01 11:49:24,438 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-135
+2026-04-01 11:49:24,438 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-135
+2026-04-01 11:49:24,442 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-140
+2026-04-01 11:49:24,442 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-140
+2026-04-01 11:49:24,449 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-138
+2026-04-01 11:49:24,449 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-138
+2026-04-01 11:49:24,449 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-132
+2026-04-01 11:49:24,449 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-132
+2026-04-01 11:49:24,468 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-143
+2026-04-01 11:49:24,471 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-143
+2026-04-01 11:49:24,483 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-137
+2026-04-01 11:49:24,483 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-137
+2026-04-01 11:49:24,504 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-139
+2026-04-01 11:49:24,504 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-139
+2026-04-01 11:49:24,512 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-148
+2026-04-01 11:49:24,512 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-148
+2026-04-01 11:49:24,512 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-146
+2026-04-01 11:49:24,512 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-146
+2026-04-01 11:49:24,536 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-141
+2026-04-01 11:49:24,536 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-141
+2026-04-01 11:49:24,540 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-145
+2026-04-01 11:49:24,540 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-145
+2026-04-01 11:49:24,544 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-147
+2026-04-01 11:49:24,544 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-147
+2026-04-01 11:49:24,569 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-154
+2026-04-01 11:49:24,569 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-154
+2026-04-01 11:49:24,570 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-142
+2026-04-01 11:49:24,570 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-142
+2026-04-01 11:49:24,580 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-149
+2026-04-01 11:49:24,580 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-149
+2026-04-01 11:49:24,594 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-144
+2026-04-01 11:49:24,594 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-144
+2026-04-01 11:49:24,602 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-151
+2026-04-01 11:49:24,602 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-151
+2026-04-01 11:49:24,618 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-165
+2026-04-01 11:49:24,618 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-165
+2026-04-01 11:49:24,618 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-155
+2026-04-01 11:49:24,618 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-155
+2026-04-01 11:49:24,622 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-152
+2026-04-01 11:49:24,622 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-152
+2026-04-01 11:49:24,627 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-150
+2026-04-01 11:49:24,627 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-150
+2026-04-01 11:49:24,650 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-161
+2026-04-01 11:49:24,650 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-161
+2026-04-01 11:49:24,651 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-153
+2026-04-01 11:49:24,651 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-153
+2026-04-01 11:49:24,668 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-158
+2026-04-01 11:49:24,668 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-158
+2026-04-01 11:49:24,672 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-156
+2026-04-01 11:49:24,672 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-156
+2026-04-01 11:49:24,677 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-157
+2026-04-01 11:49:24,677 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-157
+2026-04-01 11:49:24,690 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-162
+2026-04-01 11:49:24,690 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-162
+2026-04-01 11:49:24,708 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-166
+2026-04-01 11:49:24,708 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-166
+2026-04-01 11:49:24,709 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-175
+2026-04-01 11:49:24,709 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-175
+2026-04-01 11:49:24,713 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-159
+2026-04-01 11:49:24,713 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-159
+2026-04-01 11:49:24,722 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-160
+2026-04-01 11:49:24,722 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-160
+2026-04-01 11:49:24,725 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-170
+2026-04-01 11:49:24,725 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-170
+2026-04-01 11:49:24,729 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-168
+2026-04-01 11:49:24,729 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-168
+2026-04-01 11:49:24,731 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-163
+2026-04-01 11:49:24,731 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-163
+2026-04-01 11:49:24,742 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-173
+2026-04-01 11:49:24,742 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-173
+2026-04-01 11:49:24,747 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-176
+2026-04-01 11:49:24,747 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-176
+2026-04-01 11:49:24,748 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-164
+2026-04-01 11:49:24,748 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-164
+2026-04-01 11:49:24,748 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-172
+2026-04-01 11:49:24,748 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-172
+2026-04-01 11:49:24,763 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-174
+2026-04-01 11:49:24,763 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-174
+2026-04-01 11:49:24,764 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-167
+2026-04-01 11:49:24,764 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-167
+2026-04-01 11:49:24,767 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-180
+2026-04-01 11:49:24,767 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-180
+2026-04-01 11:49:24,779 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-184
+2026-04-01 11:49:24,779 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-184
+2026-04-01 11:49:24,779 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-169
+2026-04-01 11:49:24,779 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-169
+2026-04-01 11:49:24,783 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-171
+2026-04-01 11:49:24,783 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-171
+2026-04-01 11:49:24,790 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-179
+2026-04-01 11:49:24,790 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-179
+2026-04-01 11:49:24,792 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-178
+2026-04-01 11:49:24,792 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-178
+2026-04-01 11:49:24,792 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-182
+2026-04-01 11:49:24,795 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-182
+2026-04-01 11:49:24,795 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-187
+2026-04-01 11:49:24,795 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-187
+2026-04-01 11:49:24,798 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-181
+2026-04-01 11:49:24,798 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-181
+2026-04-01 11:49:24,806 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-183
+2026-04-01 11:49:24,806 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-183
+2026-04-01 11:49:24,811 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-189
+2026-04-01 11:49:24,811 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-189
+2026-04-01 11:49:24,811 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-198
+2026-04-01 11:49:24,811 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-198
+2026-04-01 11:49:24,813 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-185
+2026-04-01 11:49:24,813 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-177
+2026-04-01 11:49:24,813 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-185
+2026-04-01 11:49:24,813 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-177
+2026-04-01 11:49:24,819 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-195
+2026-04-01 11:49:24,819 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-195
+2026-04-01 11:49:24,819 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-192
+2026-04-01 11:49:24,819 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-192
+2026-04-01 11:49:24,819 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-188
+2026-04-01 11:49:24,819 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-188
+2026-04-01 11:49:24,822 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-194
+2026-04-01 11:49:24,822 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-194
+2026-04-01 11:49:24,829 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-197
+2026-04-01 11:49:24,829 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-197
+2026-04-01 11:49:24,829 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-191
+2026-04-01 11:49:24,829 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-191
+2026-04-01 11:49:24,829 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-196
+2026-04-01 11:49:24,829 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-196
+2026-04-01 11:49:24,829 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-186
+2026-04-01 11:49:24,829 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-186
+2026-04-01 11:49:24,833 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-190
+2026-04-01 11:49:24,833 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-190
+2026-04-01 11:49:24,834 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-199
+2026-04-01 11:49:24,834 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-199
+2026-04-01 11:49:24,834 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-193
+2026-04-01 11:49:24,834 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-193
+2026-04-01 11:49:24,838 INFO o.a.j.t.JMeterThread: Thread is done: 秒杀线程组 1-200
+2026-04-01 11:49:24,838 INFO o.a.j.t.JMeterThread: Thread finished: 秒杀线程组 1-200
+2026-04-01 11:49:24,838 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
+2026-04-01 11:49:24,840 INFO o.a.j.r.Summariser: summary =  10000 in 00:00:12 =  846.0/s Avg:   144 Min:     6 Max:   379 Err:     0 (0.00%)
