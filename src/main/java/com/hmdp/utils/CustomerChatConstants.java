@@ -20,6 +20,14 @@ public final class CustomerChatConstants {
     public static final String MESSAGE_TYPE_TEXT = "TEXT";
 
     public static final int CHAT_INACTIVE_MINUTES = 30;
+    public static final int SUMMARY_MESSAGE_LIMIT = 100;
+    public static final int SUMMARY_MESSAGE_CONTENT_LIMIT = 1000;
+    public static final int FALLBACK_SUMMARY_MESSAGE_COUNT = 10;
+    public static final int FALLBACK_MESSAGE_CONTENT_LIMIT = 200;
+    public static final int CHAT_SUMMARY_MAX_LENGTH = 1200;
+    public static final int IM_CHAT_SUMMARY_MAX_LENGTH = 3000;
+    public static final String NO_LONG_TERM_MEMORY = "暂无长期会话记忆";
+
     public static final int DEFAULT_PAGE_SIZE = 20;
     public static final int MAX_PAGE_SIZE = 100;
 }

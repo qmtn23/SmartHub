@@ -9,7 +9,7 @@ import com.hmdp.mapper.CustomerChatMapper;
 import com.hmdp.mapper.CustomerChatMessageMapper;
 import com.hmdp.mapper.CustomerImChatMapper;
 import com.hmdp.service.CustomerAssistant;
-import com.hmdp.utils.RedisChatMemoryStore;
+import com.hmdp.service.IConversationMemoryService;
 import com.hmdp.utils.RedisIdWorker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ class CustomerChatServiceImplTest {
     @Mock
     private CustomerAssistant customerAssistant;
     @Mock
-    private RedisChatMemoryStore chatMemoryStore;
+    private IConversationMemoryService conversationMemoryService;
     @Mock
     private RedisIdWorker redisIdWorker;
 
@@ -49,7 +49,7 @@ class CustomerChatServiceImplTest {
     void setUp() {
         service = new CustomerChatServiceImpl(
                 imChatMapper, chatMapper, messageMapper,
-                customerAssistant, chatMemoryStore, redisIdWorker);
+                customerAssistant, conversationMemoryService, redisIdWorker);
     }
 
     @Test
@@ -93,7 +93,8 @@ class CustomerChatServiceImplTest {
         when(chatMapper.selectOne(any())).thenReturn(chat);
         when(messageMapper.selectOne(any())).thenReturn(null);
         when(redisIdWorker.nextId("chat_message")).thenReturn(3001L, 3002L);
-        when(customerAssistant.chat(chatId, "查询订单")).thenReturn("已为您查询");
+        when(conversationMemoryService.getLongTermMemory(imChat)).thenReturn("用户此前咨询过该订单");
+        when(customerAssistant.chat(chatId, "用户此前咨询过该订单", "查询订单")).thenReturn("已为您查询");
 
         ChatRequest request = new ChatRequest();
         request.setImChatId(imChatId);
@@ -107,7 +108,7 @@ class CustomerChatServiceImplTest {
         assertEquals(3001L, result.getUserMessageId());
         assertEquals(3002L, result.getAssistantMessageId());
         assertEquals("已为您查询", result.getReply());
-        verify(customerAssistant).chat(chatId, "查询订单");
+        verify(customerAssistant).chat(chatId, "用户此前咨询过该订单", "查询订单");
         verify(messageMapper, org.mockito.Mockito.times(2)).insert(any(CustomerChatMessage.class));
     }
 }

@@ -13,11 +13,10 @@ import com.hmdp.mapper.CustomerChatMapper;
 import com.hmdp.mapper.CustomerChatMessageMapper;
 import com.hmdp.mapper.CustomerImChatMapper;
 import com.hmdp.service.CustomerAssistant;
+import com.hmdp.service.IConversationMemoryService;
 import com.hmdp.service.ICustomerChatService;
-import com.hmdp.utils.RedisChatMemoryStore;
 import com.hmdp.utils.RedisIdWorker;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,20 +30,20 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
     private final CustomerChatMapper chatMapper;
     private final CustomerChatMessageMapper messageMapper;
     private final CustomerAssistant customerAssistant;
-    private final RedisChatMemoryStore chatMemoryStore;
+    private final IConversationMemoryService conversationMemoryService;
     private final RedisIdWorker redisIdWorker;
 
     public CustomerChatServiceImpl(CustomerImChatMapper imChatMapper,
                                    CustomerChatMapper chatMapper,
                                    CustomerChatMessageMapper messageMapper,
                                    CustomerAssistant customerAssistant,
-                                   RedisChatMemoryStore chatMemoryStore,
+                                   IConversationMemoryService conversationMemoryService,
                                    RedisIdWorker redisIdWorker) {
         this.imChatMapper = imChatMapper;
         this.chatMapper = chatMapper;
         this.messageMapper = messageMapper;
         this.customerAssistant = customerAssistant;
-        this.chatMemoryStore = chatMemoryStore;
+        this.conversationMemoryService = conversationMemoryService;
         this.redisIdWorker = redisIdWorker;
     }
 
@@ -79,7 +78,6 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
     }
 
     @Override
-    @Transactional
     public CustomerChat createOrResumeChat(Long userId, Long imChatId) {
         CustomerImChat imChat = requireOwnedImChat(userId, imChatId);
         if (IM_CHAT_STATUS_CLOSED.equals(imChat.getStatus())) {
@@ -98,7 +96,7 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
             return activeChat;
         }
         if (activeChat != null) {
-            endChat(activeChat, now);
+            conversationMemoryService.finalizeChat(imChat, activeChat, now);
         }
 
         CustomerChat chat = new CustomerChat()
@@ -113,6 +111,13 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
     }
 
     @Override
+    public void endChat(Long userId, Long imChatId, Long chatId) {
+        CustomerImChat imChat = requireOwnedImChat(userId, imChatId);
+        CustomerChat chat = requireActiveChat(userId, imChatId, chatId);
+        conversationMemoryService.finalizeChat(imChat, chat, LocalDateTime.now());
+    }
+
+    @Override
     public ChatReplyDTO sendMessage(Long userId, ChatRequest request) {
         validateSendRequest(request);
         CustomerImChat imChat = requireOwnedImChat(userId, request.getImChatId());
@@ -121,7 +126,7 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
         }
         CustomerChat chat = requireActiveChat(userId, request.getImChatId(), request.getChatId());
         if (isExpired(chat, LocalDateTime.now())) {
-            endChat(chat, LocalDateTime.now());
+            conversationMemoryService.finalizeChat(imChat, chat, LocalDateTime.now());
             throw new ChatBusinessException("短会话已超时，请重新进入该长会话");
         }
 
@@ -145,7 +150,10 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
 
         updateConversationActivity(imChat, chat, userMessage.getContent(), now);
 
-        String reply = customerAssistant.chat(request.getChatId(), userMessage.getContent());
+        String reply = customerAssistant.chat(
+                request.getChatId(),
+                conversationMemoryService.getLongTermMemory(imChat),
+                userMessage.getContent());
         LocalDateTime replyTime = LocalDateTime.now();
         CustomerChatMessage assistantMessage = new CustomerChatMessage()
                 .setMessageId(redisIdWorker.nextId("chat_message"))
@@ -174,7 +182,6 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
     }
 
     @Override
-    @Transactional
     public void closeImChat(Long userId, Long imChatId) {
         CustomerImChat imChat = requireOwnedImChat(userId, imChatId);
         if (IM_CHAT_STATUS_CLOSED.equals(imChat.getStatus())) {
@@ -186,8 +193,7 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
                 .eq(CustomerChat::getUserId, userId)
                 .eq(CustomerChat::getStatus, CHAT_STATUS_ACTIVE));
         for (CustomerChat chat : activeChats) {
-            endChat(chat, now);
-            chatMemoryStore.deleteMessages(chat.getChatId());
+            conversationMemoryService.finalizeChat(imChat, chat, now);
         }
         imChat.setStatus(IM_CHAT_STATUS_CLOSED);
         imChat.setCloseTime(now);
@@ -257,13 +263,6 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
         imChat.setLastMessageTime(now);
         imChat.setUpdateTime(now);
         imChatMapper.updateById(imChat);
-    }
-
-    private void endChat(CustomerChat chat, LocalDateTime now) {
-        chat.setStatus(CHAT_STATUS_ENDED);
-        chat.setEndTime(now);
-        chat.setLastActiveTime(now);
-        chatMapper.updateById(chat);
     }
 
     private boolean isExpired(CustomerChat chat, LocalDateTime now) {

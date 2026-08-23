@@ -81,6 +81,15 @@ public class ChatController {
     }
 
     /**
+     * 主动结束短会话，并刷新所属长会话的长期记忆。
+     */
+    @PostMapping("/im-chats/{imChatId}/chats/{chatId}/end")
+    public Result endChat(@PathVariable Long imChatId, @PathVariable Long chatId) {
+        customerChatService.endChat(currentUserId(), imChatId, chatId);
+        return Result.ok();
+    }
+
+    /**
      * 在指定短会话中发送消息。
      */
     @PostMapping("/send")

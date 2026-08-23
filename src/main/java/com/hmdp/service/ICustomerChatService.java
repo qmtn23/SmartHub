@@ -17,6 +17,8 @@ public interface ICustomerChatService {
 
     CustomerChat createOrResumeChat(Long userId, Long imChatId);
 
+    void endChat(Long userId, Long imChatId, Long chatId);
+
     ChatReplyDTO sendMessage(Long userId, ChatRequest request);
 
     IPage<CustomerChatMessage> listMessages(Long userId, Long imChatId, int pageNo, int pageSize);
