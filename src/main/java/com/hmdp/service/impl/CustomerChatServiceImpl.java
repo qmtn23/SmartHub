@@ -15,6 +15,8 @@ import com.hmdp.mapper.CustomerImChatMapper;
 import com.hmdp.service.CustomerAssistant;
 import com.hmdp.service.IConversationMemoryService;
 import com.hmdp.service.ICustomerChatService;
+import com.hmdp.utils.CustomerToolContext;
+import com.hmdp.utils.CustomerToolContextHolder;
 import com.hmdp.utils.RedisIdWorker;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +33,7 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
     private final CustomerChatMessageMapper messageMapper;
     private final CustomerAssistant customerAssistant;
     private final IConversationMemoryService conversationMemoryService;
+    private final CustomerToolContextHolder toolContextHolder;
     private final RedisIdWorker redisIdWorker;
 
     public CustomerChatServiceImpl(CustomerImChatMapper imChatMapper,
@@ -38,12 +41,14 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
                                    CustomerChatMessageMapper messageMapper,
                                    CustomerAssistant customerAssistant,
                                    IConversationMemoryService conversationMemoryService,
+                                   CustomerToolContextHolder toolContextHolder,
                                    RedisIdWorker redisIdWorker) {
         this.imChatMapper = imChatMapper;
         this.chatMapper = chatMapper;
         this.messageMapper = messageMapper;
         this.customerAssistant = customerAssistant;
         this.conversationMemoryService = conversationMemoryService;
+        this.toolContextHolder = toolContextHolder;
         this.redisIdWorker = redisIdWorker;
     }
 
@@ -150,10 +155,18 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
 
         updateConversationActivity(imChat, chat, userMessage.getContent(), now);
 
-        String reply = customerAssistant.chat(
-                request.getChatId(),
-                conversationMemoryService.getLongTermMemory(imChat),
-                userMessage.getContent());
+        CustomerToolContext toolContext = new CustomerToolContext(
+                userId, request.getImChatId(), request.getChatId(), userMessage.getMessageId());
+        String reply;
+        toolContextHolder.set(toolContext);
+        try {
+            reply = customerAssistant.chat(
+                    request.getChatId(),
+                    conversationMemoryService.getLongTermMemory(imChat),
+                    userMessage.getContent());
+        } finally {
+            toolContextHolder.clear();
+        }
         LocalDateTime replyTime = LocalDateTime.now();
         CustomerChatMessage assistantMessage = new CustomerChatMessage()
                 .setMessageId(redisIdWorker.nextId("chat_message"))

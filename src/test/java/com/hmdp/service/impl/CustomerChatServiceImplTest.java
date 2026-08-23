@@ -10,6 +10,8 @@ import com.hmdp.mapper.CustomerChatMessageMapper;
 import com.hmdp.mapper.CustomerImChatMapper;
 import com.hmdp.service.CustomerAssistant;
 import com.hmdp.service.IConversationMemoryService;
+import com.hmdp.utils.CustomerToolContext;
+import com.hmdp.utils.CustomerToolContextHolder;
 import com.hmdp.utils.RedisIdWorker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +43,8 @@ class CustomerChatServiceImplTest {
     @Mock
     private IConversationMemoryService conversationMemoryService;
     @Mock
+    private CustomerToolContextHolder toolContextHolder;
+    @Mock
     private RedisIdWorker redisIdWorker;
 
     private CustomerChatServiceImpl service;
@@ -49,7 +53,7 @@ class CustomerChatServiceImplTest {
     void setUp() {
         service = new CustomerChatServiceImpl(
                 imChatMapper, chatMapper, messageMapper,
-                customerAssistant, conversationMemoryService, redisIdWorker);
+                customerAssistant, conversationMemoryService, toolContextHolder, redisIdWorker);
     }
 
     @Test
@@ -109,6 +113,8 @@ class CustomerChatServiceImplTest {
         assertEquals(3002L, result.getAssistantMessageId());
         assertEquals("已为您查询", result.getReply());
         verify(customerAssistant).chat(chatId, "用户此前咨询过该订单", "查询订单");
+        verify(toolContextHolder).set(any(CustomerToolContext.class));
+        verify(toolContextHolder).clear();
         verify(messageMapper, org.mockito.Mockito.times(2)).insert(any(CustomerChatMessage.class));
     }
 }
