@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class WebExceptionAdvice {
 
+    @ExceptionHandler(ChatBusinessException.class)
+    public Result handleChatBusinessException(ChatBusinessException e) {
+        return Result.fail(e.getMessage());
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public Result handleRuntimeException(RuntimeException e) {
         log.error(e.toString(), e);

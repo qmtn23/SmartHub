@@ -18,5 +18,5 @@ public interface CustomerAssistant {
             "请用友好、专业的语气回答，回复控制在200字以内。\n" +
             "如果需要查询平台数据，请使用提供的业务工具函数。\n" +
             "如果需要获取互联网上的最新信息，请使用搜索工具进行联网搜索。")
-    String chat(@MemoryId Long userId, @UserMessage String message);
+    String chat(@MemoryId Long chatId, @UserMessage String message);
 }
