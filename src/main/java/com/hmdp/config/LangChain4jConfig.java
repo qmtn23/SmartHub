@@ -5,7 +5,6 @@ import com.hmdp.utils.CustomerServiceTools;
 import com.hmdp.utils.RedisChatMemoryStore;
 import dev.langchain4j.community.model.dashscope.QwenChatModel;
 import dev.langchain4j.community.model.dashscope.QwenEmbeddingModel;
-import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
@@ -19,12 +18,9 @@ import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.rag.RetrievalAugmentor;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
-import dev.langchain4j.rag.query.router.DefaultQueryRouter;
-import dev.langchain4j.rag.query.router.QueryRouter;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -64,54 +60,31 @@ public class LangChain4jConfig {
                 .build();
     }
 
-    @Bean("businessEmbeddingStore")
-    public EmbeddingStore<TextSegment> businessEmbeddingStore() {
+    /**
+     * 只存放FAQ、平台规则和客服SOP等静态知识。
+     * 店铺、订单、优惠券和笔记等动态数据必须通过工具网关实时查询。
+     */
+    @Bean("staticKnowledgeEmbeddingStore")
+    public EmbeddingStore<TextSegment> staticKnowledgeEmbeddingStore() {
         return new InMemoryEmbeddingStore<>();
     }
 
-    @Bean("skillEmbeddingStore")
-    public EmbeddingStore<TextSegment> skillEmbeddingStore() {
-        return new InMemoryEmbeddingStore<>();
-    }
-
     @Bean
-    public EmbeddingStoreIngestor embeddingStoreIngestor(EmbeddingModel embeddingModel,
-                                                         @Qualifier("businessEmbeddingStore") EmbeddingStore<TextSegment> embeddingStore) {
-        return EmbeddingStoreIngestor.builder()
-                .documentSplitter(DocumentSplitters.recursive(300, 50))
-                .embeddingModel(embeddingModel)
-                .embeddingStore(embeddingStore)
-                .build();
-    }
-
-    @Bean
-    public ContentRetriever businessContentRetriever(EmbeddingModel embeddingModel,
-                                                      @Qualifier("businessEmbeddingStore") EmbeddingStore<TextSegment> embeddingStore) {
+    public ContentRetriever staticKnowledgeContentRetriever(
+            EmbeddingModel embeddingModel,
+            @Qualifier("staticKnowledgeEmbeddingStore") EmbeddingStore<TextSegment> staticKnowledgeEmbeddingStore) {
         return EmbeddingStoreContentRetriever.builder()
-                .embeddingStore(embeddingStore)
+                .embeddingStore(staticKnowledgeEmbeddingStore)
                 .embeddingModel(embeddingModel)
-                .maxResults(3)
-                .minScore(0.6)
+                .maxResults(4)
+                .minScore(0.55)
                 .build();
     }
 
     @Bean
-    public ContentRetriever skillContentRetriever(EmbeddingModel embeddingModel,
-                                                   @Qualifier("skillEmbeddingStore") EmbeddingStore<TextSegment> skillEmbeddingStore) {
-        return EmbeddingStoreContentRetriever.builder()
-                .embeddingStore(skillEmbeddingStore)
-                .embeddingModel(embeddingModel)
-                .maxResults(2)
-                .minScore(0.5)
-                .build();
-    }
-
-    @Bean
-    public RetrievalAugmentor retrievalAugmentor(ContentRetriever businessContentRetriever,
-                                                  ContentRetriever skillContentRetriever) {
-        QueryRouter queryRouter = new DefaultQueryRouter(businessContentRetriever, skillContentRetriever);
+    public RetrievalAugmentor retrievalAugmentor(ContentRetriever staticKnowledgeContentRetriever) {
         return DefaultRetrievalAugmentor.builder()
-                .queryRouter(queryRouter)
+                .contentRetriever(staticKnowledgeContentRetriever)
                 .build();
     }
 
