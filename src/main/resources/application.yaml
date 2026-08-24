@@ -28,6 +28,8 @@ dashscope:
   embedding-model: text-embedding-v3
 tavily:
   api-key: ${TAVILY_API_KEY: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}
+customer-service:
+  operator-key: ${CUSTOMER_SERVICE_OPERATOR_KEY:}
 logging:
   level:
     com.hmdp: debug

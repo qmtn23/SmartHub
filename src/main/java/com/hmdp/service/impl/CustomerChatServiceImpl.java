@@ -96,6 +96,13 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
                 .orderByDesc(CustomerChat::getStartTime)
                 .last("LIMIT 1"));
 
+        if (isHumanMode(imChat)) {
+            if (activeChat == null) {
+                throw new ChatBusinessException("人工接待短会话不存在，请重新查询转人工状态");
+            }
+            return activeChat;
+        }
+
         LocalDateTime now = LocalDateTime.now();
         if (activeChat != null && !isExpired(activeChat, now)) {
             return activeChat;
@@ -118,6 +125,9 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
     @Override
     public void endChat(Long userId, Long imChatId, Long chatId) {
         CustomerImChat imChat = requireOwnedImChat(userId, imChatId);
+        if (isHumanMode(imChat)) {
+            throw new ChatBusinessException("人工接待短会话不能通过该接口结束");
+        }
         CustomerChat chat = requireActiveChat(userId, imChatId, chatId);
         conversationMemoryService.finalizeChat(imChat, chat, LocalDateTime.now());
     }
@@ -126,18 +136,19 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
     public ChatReplyDTO sendMessage(Long userId, ChatRequest request) {
         validateSendRequest(request);
         CustomerImChat imChat = requireOwnedImChat(userId, request.getImChatId());
-        if (!IM_CHAT_STATUS_BOT_ACTIVE.equals(imChat.getStatus())) {
-            throw new ChatBusinessException("当前长会话不处于机器人接待状态");
+        if (IM_CHAT_STATUS_CLOSED.equals(imChat.getStatus())) {
+            throw new ChatBusinessException("长会话已关闭，请新建会话");
         }
         CustomerChat chat = requireActiveChat(userId, request.getImChatId(), request.getChatId());
-        if (isExpired(chat, LocalDateTime.now())) {
+        if (IM_CHAT_STATUS_BOT_ACTIVE.equals(imChat.getStatus())
+                && isExpired(chat, LocalDateTime.now())) {
             conversationMemoryService.finalizeChat(imChat, chat, LocalDateTime.now());
             throw new ChatBusinessException("短会话已超时，请重新进入该长会话");
         }
 
         CustomerChatMessage existingUserMessage = findUserMessage(userId, request.getClientMessageId());
         if (existingUserMessage != null) {
-            return existingReply(existingUserMessage);
+            return existingReply(existingUserMessage, imChat);
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -154,6 +165,13 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
         messageMapper.insert(userMessage);
 
         updateConversationActivity(imChat, chat, userMessage.getContent(), now);
+
+        if (isHumanMode(imChat)) {
+            return toReply(userMessage, null, imChat);
+        }
+        if (!IM_CHAT_STATUS_BOT_ACTIVE.equals(imChat.getStatus())) {
+            throw new ChatBusinessException("当前长会话暂时不能发送消息");
+        }
 
         CustomerToolContext toolContext = new CustomerToolContext(
                 userId, request.getImChatId(), request.getChatId(), userMessage.getMessageId());
@@ -181,7 +199,7 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
         messageMapper.insert(assistantMessage);
         updateActivityOnly(imChat, chat, replyTime);
 
-        return toReply(userMessage, assistantMessage);
+        return toReply(userMessage, assistantMessage, imChat);
     }
 
     @Override
@@ -199,6 +217,9 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
         CustomerImChat imChat = requireOwnedImChat(userId, imChatId);
         if (IM_CHAT_STATUS_CLOSED.equals(imChat.getStatus())) {
             return;
+        }
+        if (isHumanMode(imChat)) {
+            throw new ChatBusinessException("请等待人工接待结束后再关闭长会话");
         }
         LocalDateTime now = LocalDateTime.now();
         List<CustomerChat> activeChats = chatMapper.selectList(new LambdaQueryWrapper<CustomerChat>()
@@ -250,16 +271,19 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
                 .last("LIMIT 1"));
     }
 
-    private ChatReplyDTO existingReply(CustomerChatMessage userMessage) {
+    private ChatReplyDTO existingReply(CustomerChatMessage userMessage, CustomerImChat imChat) {
         CustomerChatMessage assistantMessage = messageMapper.selectOne(
                 new LambdaQueryWrapper<CustomerChatMessage>()
                         .eq(CustomerChatMessage::getReplyToMessageId, userMessage.getMessageId())
                         .eq(CustomerChatMessage::getSenderType, SENDER_ASSISTANT)
                         .last("LIMIT 1"));
         if (assistantMessage == null) {
+            if (isHumanMode(imChat)) {
+                return toReply(userMessage, null, imChat);
+            }
             throw new ChatBusinessException("该消息正在处理中，请稍后重试");
         }
-        return toReply(userMessage, assistantMessage);
+        return toReply(userMessage, assistantMessage, imChat);
     }
 
     private void updateConversationActivity(CustomerImChat imChat, CustomerChat chat,
@@ -318,13 +342,24 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
         return value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 
-    private ChatReplyDTO toReply(CustomerChatMessage userMessage, CustomerChatMessage assistantMessage) {
+    private boolean isHumanMode(CustomerImChat imChat) {
+        return IM_CHAT_STATUS_HUMAN_PENDING.equals(imChat.getStatus())
+                || IM_CHAT_STATUS_HUMAN_ACTIVE.equals(imChat.getStatus());
+    }
+
+    private ChatReplyDTO toReply(CustomerChatMessage userMessage,
+                                 CustomerChatMessage assistantMessage,
+                                 CustomerImChat imChat) {
         ChatReplyDTO reply = new ChatReplyDTO();
         reply.setImChatId(userMessage.getImChatId());
         reply.setChatId(userMessage.getChatId());
         reply.setUserMessageId(userMessage.getMessageId());
-        reply.setAssistantMessageId(assistantMessage.getMessageId());
-        reply.setReply(assistantMessage.getContent());
+        if (assistantMessage != null) {
+            reply.setAssistantMessageId(assistantMessage.getMessageId());
+            reply.setReply(assistantMessage.getContent());
+        }
+        reply.setConversationStatus(imChat.getStatus());
+        reply.setHandlerType(imChat.getHandlerType());
         return reply;
     }
 }

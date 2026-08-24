@@ -23,10 +23,12 @@ import java.time.LocalDateTime;
 
 import static com.hmdp.utils.CustomerChatConstants.CHAT_STATUS_ACTIVE;
 import static com.hmdp.utils.CustomerChatConstants.IM_CHAT_STATUS_BOT_ACTIVE;
+import static com.hmdp.utils.CustomerChatConstants.IM_CHAT_STATUS_HUMAN_PENDING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -116,5 +118,46 @@ class CustomerChatServiceImplTest {
         verify(toolContextHolder).set(any(CustomerToolContext.class));
         verify(toolContextHolder).clear();
         verify(messageMapper, org.mockito.Mockito.times(2)).insert(any(CustomerChatMessage.class));
+    }
+
+    @Test
+    void shouldPersistUserMessageWithoutCallingModelDuringHumanHandoff() {
+        Long userId = 7L;
+        Long imChatId = 1001L;
+        Long chatId = 2002L;
+        LocalDateTime now = LocalDateTime.now();
+        CustomerImChat imChat = new CustomerImChat()
+                .setImChatId(imChatId)
+                .setUserId(userId)
+                .setTitle("人工咨询")
+                .setHandlerType("HUMAN")
+                .setStatus(IM_CHAT_STATUS_HUMAN_PENDING)
+                .setLastMessageTime(now);
+        CustomerChat chat = new CustomerChat()
+                .setChatId(chatId)
+                .setImChatId(imChatId)
+                .setUserId(userId)
+                .setStatus(CHAT_STATUS_ACTIVE)
+                .setStartTime(now.minusHours(1))
+                .setLastActiveTime(now.minusHours(1));
+
+        when(imChatMapper.selectOne(any())).thenReturn(imChat);
+        when(chatMapper.selectOne(any())).thenReturn(chat);
+        when(messageMapper.selectOne(any())).thenReturn(null);
+        when(redisIdWorker.nextId("chat_message")).thenReturn(3003L);
+
+        ChatRequest request = new ChatRequest();
+        request.setImChatId(imChatId);
+        request.setChatId(chatId);
+        request.setClientMessageId("client-human-1");
+        request.setMessage("我补充一张消费凭证");
+
+        ChatReplyDTO result = service.sendMessage(userId, request);
+
+        assertEquals(IM_CHAT_STATUS_HUMAN_PENDING, result.getConversationStatus());
+        assertEquals("HUMAN", result.getHandlerType());
+        assertEquals(null, result.getAssistantMessageId());
+        verify(messageMapper).insert(any(CustomerChatMessage.class));
+        verifyNoInteractions(customerAssistant, toolContextHolder);
     }
 }

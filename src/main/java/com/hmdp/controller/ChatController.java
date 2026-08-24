@@ -5,12 +5,16 @@ import com.hmdp.dto.ChatMessageDTO;
 import com.hmdp.dto.ChatRequest;
 import com.hmdp.dto.ChatSessionDTO;
 import com.hmdp.dto.CreateImChatRequest;
+import com.hmdp.dto.HandoffDTO;
 import com.hmdp.dto.ImChatDTO;
 import com.hmdp.dto.Result;
+import com.hmdp.dto.TransferHumanRequest;
+import com.hmdp.config.ChatBusinessException;
 import com.hmdp.entity.CustomerChat;
 import com.hmdp.entity.CustomerChatMessage;
 import com.hmdp.entity.CustomerImChat;
 import com.hmdp.service.ICustomerChatService;
+import com.hmdp.service.ICustomerHandoffService;
 import com.hmdp.utils.UserHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,9 +34,12 @@ import java.util.stream.Collectors;
 public class ChatController {
 
     private final ICustomerChatService customerChatService;
+    private final ICustomerHandoffService handoffService;
 
-    public ChatController(ICustomerChatService customerChatService) {
+    public ChatController(ICustomerChatService customerChatService,
+                          ICustomerHandoffService handoffService) {
         this.customerChatService = customerChatService;
+        this.handoffService = handoffService;
     }
 
     /**
@@ -95,6 +102,24 @@ public class ChatController {
     @PostMapping("/send")
     public Result sendMessage(@RequestBody ChatRequest request) {
         return Result.ok(customerChatService.sendMessage(currentUserId(), request));
+    }
+
+    /**
+     * 结束当前机器人短会话并进入人工客服等待队列。
+     */
+    @PostMapping("/im-chats/{imChatId}/transfer-human")
+    public Result transferHuman(@PathVariable Long imChatId,
+                                @RequestBody TransferHumanRequest request) {
+        if (request == null) {
+            throw new ChatBusinessException("转人工请求不能为空");
+        }
+        return Result.ok(toHandoffDTO(handoffService.requestHandoff(
+                currentUserId(), imChatId, request.getChatId(), request.getReason())));
+    }
+
+    @GetMapping("/im-chats/{imChatId}/transfer-status")
+    public Result transferStatus(@PathVariable Long imChatId) {
+        return Result.ok(toHandoffDTO(handoffService.getCurrentHandoff(currentUserId(), imChatId)));
     }
 
     /**
@@ -164,6 +189,24 @@ public class ChatController {
         target.setStructuredContent(source.getStructuredContent());
         target.setReplyToMessageId(source.getReplyToMessageId());
         target.setCreateTime(source.getCreateTime());
+        return target;
+    }
+
+    private HandoffDTO toHandoffDTO(com.hmdp.entity.CustomerHandoff source) {
+        HandoffDTO target = new HandoffDTO();
+        target.setHandoffId(source.getHandoffId());
+        target.setImChatId(source.getImChatId());
+        target.setFromChatId(source.getFromChatId());
+        target.setHumanChatId(source.getHumanChatId());
+        target.setReason(source.getReason());
+        target.setSummary(source.getSummary());
+        target.setBusinessRefs(source.getBusinessRefs());
+        target.setStatus(source.getStatus());
+        target.setOperatorId(source.getOperatorId());
+        target.setRequestedTime(source.getRequestedTime());
+        target.setAcceptedTime(source.getAcceptedTime());
+        target.setCompletedTime(source.getCompletedTime());
+        target.setUpdateTime(source.getUpdateTime());
         return target;
     }
 }

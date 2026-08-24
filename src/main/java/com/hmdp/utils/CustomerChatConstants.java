@@ -8,16 +8,24 @@ public final class CustomerChatConstants {
     public static final String DEFAULT_IM_CHAT_TITLE = "新客服会话";
 
     public static final String IM_CHAT_STATUS_BOT_ACTIVE = "BOT_ACTIVE";
+    public static final String IM_CHAT_STATUS_HUMAN_PENDING = "HUMAN_PENDING";
+    public static final String IM_CHAT_STATUS_HUMAN_ACTIVE = "HUMAN_ACTIVE";
     public static final String IM_CHAT_STATUS_CLOSED = "CLOSED";
 
     public static final String HANDLER_TYPE_BOT = "BOT";
+    public static final String HANDLER_TYPE_HUMAN = "HUMAN";
 
     public static final String CHAT_STATUS_ACTIVE = "ACTIVE";
     public static final String CHAT_STATUS_ENDED = "ENDED";
 
     public static final String SENDER_USER = "USER";
     public static final String SENDER_ASSISTANT = "ASSISTANT";
+    public static final String SENDER_HUMAN = "HUMAN";
     public static final String MESSAGE_TYPE_TEXT = "TEXT";
+
+    public static final String HANDOFF_STATUS_PENDING = "PENDING";
+    public static final String HANDOFF_STATUS_ACCEPTED = "ACCEPTED";
+    public static final String HANDOFF_STATUS_COMPLETED = "COMPLETED";
 
     public static final int CHAT_INACTIVE_MINUTES = 30;
     public static final int SUMMARY_MESSAGE_LIMIT = 100;

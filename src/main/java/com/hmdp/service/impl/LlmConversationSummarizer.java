@@ -56,6 +56,9 @@ public class LlmConversationSummarizer implements ConversationSummarizer {
         if (SENDER_ASSISTANT.equals(senderType)) {
             return "机器人客服";
         }
+        if (SENDER_HUMAN.equals(senderType)) {
+            return "人工客服";
+        }
         return senderType == null ? "未知发送方" : senderType;
     }
 

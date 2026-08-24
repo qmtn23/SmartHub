@@ -9,4 +9,6 @@ public class ChatReplyDTO {
     private Long userMessageId;
     private Long assistantMessageId;
     private String reply;
+    private String conversationStatus;
+    private String handlerType;
 }
