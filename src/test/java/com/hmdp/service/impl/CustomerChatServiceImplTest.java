@@ -1,17 +1,20 @@
 package com.hmdp.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hmdp.dto.ChatReplyDTO;
 import com.hmdp.dto.ChatRequest;
+import com.hmdp.dto.agent.AgentRunResponseDTO;
+import com.hmdp.entity.CustomerAgentRun;
 import com.hmdp.entity.CustomerChat;
 import com.hmdp.entity.CustomerChatMessage;
 import com.hmdp.entity.CustomerImChat;
 import com.hmdp.mapper.CustomerChatMapper;
 import com.hmdp.mapper.CustomerChatMessageMapper;
 import com.hmdp.mapper.CustomerImChatMapper;
-import com.hmdp.service.CustomerAssistant;
+import com.hmdp.security.AgentToolTokenService;
+import com.hmdp.service.CustomerAgentClient;
+import com.hmdp.service.CustomerAgentRunService;
 import com.hmdp.service.IConversationMemoryService;
-import com.hmdp.utils.CustomerToolContext;
-import com.hmdp.utils.CustomerToolContextHolder;
 import com.hmdp.utils.RedisIdWorker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,11 +44,13 @@ class CustomerChatServiceImplTest {
     @Mock
     private CustomerChatMessageMapper messageMapper;
     @Mock
-    private CustomerAssistant customerAssistant;
+    private CustomerAgentClient customerAgentClient;
+    @Mock
+    private CustomerAgentRunService agentRunService;
+    @Mock
+    private AgentToolTokenService tokenService;
     @Mock
     private IConversationMemoryService conversationMemoryService;
-    @Mock
-    private CustomerToolContextHolder toolContextHolder;
     @Mock
     private RedisIdWorker redisIdWorker;
 
@@ -55,7 +60,8 @@ class CustomerChatServiceImplTest {
     void setUp() {
         service = new CustomerChatServiceImpl(
                 imChatMapper, chatMapper, messageMapper,
-                customerAssistant, conversationMemoryService, toolContextHolder, redisIdWorker);
+                customerAgentClient, agentRunService, tokenService,
+                conversationMemoryService, redisIdWorker, new ObjectMapper());
     }
 
     @Test
@@ -73,7 +79,7 @@ class CustomerChatServiceImplTest {
     }
 
     @Test
-    void shouldUseChatIdAsModelMemoryIdAndPersistBothMessages() {
+    void shouldUseChatIdAsAgentThreadAndPersistBothMessages() {
         Long userId = 7L;
         Long imChatId = 1001L;
         Long chatId = 2001L;
@@ -98,9 +104,19 @@ class CustomerChatServiceImplTest {
         when(imChatMapper.selectOne(any())).thenReturn(imChat);
         when(chatMapper.selectOne(any())).thenReturn(chat);
         when(messageMapper.selectOne(any())).thenReturn(null);
+        when(messageMapper.selectList(any())).thenReturn(java.util.Collections.singletonList(
+                new CustomerChatMessage().setMessageId(3001L).setSenderType("USER").setContent("查询订单")));
         when(redisIdWorker.nextId("chat_message")).thenReturn(3001L, 3002L);
         when(conversationMemoryService.getLongTermMemory(imChat)).thenReturn("用户此前咨询过该订单");
-        when(customerAssistant.chat(chatId, "用户此前咨询过该订单", "查询订单")).thenReturn("已为您查询");
+        CustomerAgentRun run = new CustomerAgentRun().setRunId("run-1").setRequestId("3001");
+        when(agentRunService.createPendingWithUserMessage(any())).thenReturn(run);
+        when(agentRunService.claim("run-1")).thenReturn(true);
+        when(tokenService.issue(any(), any())).thenReturn("tool-token");
+        AgentRunResponseDTO agentResponse = new AgentRunResponseDTO();
+        agentResponse.setReply("已为您查询");
+        agentResponse.setIntent("GENERAL");
+        agentResponse.setTraceId("trace-1");
+        when(customerAgentClient.invoke(any())).thenReturn(agentResponse);
 
         ChatRequest request = new ChatRequest();
         request.setImChatId(imChatId);
@@ -114,10 +130,12 @@ class CustomerChatServiceImplTest {
         assertEquals(3001L, result.getUserMessageId());
         assertEquals(3002L, result.getAssistantMessageId());
         assertEquals("已为您查询", result.getReply());
-        verify(customerAssistant).chat(chatId, "用户此前咨询过该订单", "查询订单");
-        verify(toolContextHolder).set(any(CustomerToolContext.class));
-        verify(toolContextHolder).clear();
-        verify(messageMapper, org.mockito.Mockito.times(2)).insert(any(CustomerChatMessage.class));
+        verify(customerAgentClient).invoke(org.mockito.ArgumentMatchers.argThat(agentRequest ->
+                String.valueOf(chatId).equals(agentRequest.getThreadId())
+                        && "用户此前咨询过该订单".equals(agentRequest.getLongTermSummary())));
+        verify(agentRunService).completeSuccess(org.mockito.Mockito.eq("run-1"),
+                org.mockito.Mockito.eq("trace-1"), any(CustomerChatMessage.class));
+        verify(agentRunService).createPendingWithUserMessage(any(CustomerChatMessage.class));
     }
 
     @Test
@@ -158,6 +176,6 @@ class CustomerChatServiceImplTest {
         assertEquals("HUMAN", result.getHandlerType());
         assertEquals(null, result.getAssistantMessageId());
         verify(messageMapper).insert(any(CustomerChatMessage.class));
-        verifyNoInteractions(customerAssistant, toolContextHolder);
+        verifyNoInteractions(customerAgentClient, agentRunService, tokenService);
     }
 }

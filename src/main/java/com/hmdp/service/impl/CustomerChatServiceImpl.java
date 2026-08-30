@@ -1,26 +1,39 @@
 package com.hmdp.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hmdp.config.AgentClientException;
 import com.hmdp.config.ChatBusinessException;
 import com.hmdp.dto.ChatReplyDTO;
 import com.hmdp.dto.ChatRequest;
+import com.hmdp.dto.agent.AgentMessageDTO;
+import com.hmdp.dto.agent.AgentRunRequestDTO;
+import com.hmdp.dto.agent.AgentRunResponseDTO;
+import com.hmdp.entity.CustomerAgentRun;
 import com.hmdp.entity.CustomerChat;
 import com.hmdp.entity.CustomerChatMessage;
 import com.hmdp.entity.CustomerImChat;
 import com.hmdp.mapper.CustomerChatMapper;
 import com.hmdp.mapper.CustomerChatMessageMapper;
 import com.hmdp.mapper.CustomerImChatMapper;
-import com.hmdp.service.CustomerAssistant;
+import com.hmdp.security.AgentToolScopes;
+import com.hmdp.security.AgentToolTokenService;
+import com.hmdp.service.CustomerAgentClient;
+import com.hmdp.service.CustomerAgentRunService;
 import com.hmdp.service.IConversationMemoryService;
 import com.hmdp.service.ICustomerChatService;
 import com.hmdp.utils.CustomerToolContext;
-import com.hmdp.utils.CustomerToolContextHolder;
 import com.hmdp.utils.RedisIdWorker;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DuplicateKeyException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hmdp.utils.CustomerChatConstants.*;
@@ -31,25 +44,31 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
     private final CustomerImChatMapper imChatMapper;
     private final CustomerChatMapper chatMapper;
     private final CustomerChatMessageMapper messageMapper;
-    private final CustomerAssistant customerAssistant;
+    private final CustomerAgentClient customerAgentClient;
+    private final CustomerAgentRunService agentRunService;
+    private final AgentToolTokenService tokenService;
     private final IConversationMemoryService conversationMemoryService;
-    private final CustomerToolContextHolder toolContextHolder;
     private final RedisIdWorker redisIdWorker;
+    private final ObjectMapper objectMapper;
 
     public CustomerChatServiceImpl(CustomerImChatMapper imChatMapper,
                                    CustomerChatMapper chatMapper,
                                    CustomerChatMessageMapper messageMapper,
-                                   CustomerAssistant customerAssistant,
+                                   CustomerAgentClient customerAgentClient,
+                                   CustomerAgentRunService agentRunService,
+                                   AgentToolTokenService tokenService,
                                    IConversationMemoryService conversationMemoryService,
-                                   CustomerToolContextHolder toolContextHolder,
-                                   RedisIdWorker redisIdWorker) {
+                                   RedisIdWorker redisIdWorker,
+                                   ObjectMapper objectMapper) {
         this.imChatMapper = imChatMapper;
         this.chatMapper = chatMapper;
         this.messageMapper = messageMapper;
-        this.customerAssistant = customerAssistant;
+        this.customerAgentClient = customerAgentClient;
+        this.agentRunService = agentRunService;
+        this.tokenService = tokenService;
         this.conversationMemoryService = conversationMemoryService;
-        this.toolContextHolder = toolContextHolder;
         this.redisIdWorker = redisIdWorker;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -148,7 +167,7 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
 
         CustomerChatMessage existingUserMessage = findUserMessage(userId, request.getClientMessageId());
         if (existingUserMessage != null) {
-            return existingReply(existingUserMessage, imChat);
+            return existingReply(existingUserMessage, imChat, chat);
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -162,44 +181,27 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
                 .setContent(request.getMessage().trim())
                 .setClientMessageId(request.getClientMessageId().trim())
                 .setCreateTime(now);
-        messageMapper.insert(userMessage);
-
-        updateConversationActivity(imChat, chat, userMessage.getContent(), now);
-
         if (isHumanMode(imChat)) {
+            messageMapper.insert(userMessage);
+            updateConversationActivity(imChat, chat, userMessage.getContent(), now);
             return toReply(userMessage, null, imChat);
         }
         if (!IM_CHAT_STATUS_BOT_ACTIVE.equals(imChat.getStatus())) {
             throw new ChatBusinessException("当前长会话暂时不能发送消息");
         }
 
-        CustomerToolContext toolContext = new CustomerToolContext(
-                userId, request.getImChatId(), request.getChatId(), userMessage.getMessageId());
-        String reply;
-        toolContextHolder.set(toolContext);
+        CustomerAgentRun run;
         try {
-            reply = customerAssistant.chat(
-                    request.getChatId(),
-                    conversationMemoryService.getLongTermMemory(imChat),
-                    userMessage.getContent());
-        } finally {
-            toolContextHolder.clear();
+            run = agentRunService.createPendingWithUserMessage(userMessage);
+        } catch (DuplicateKeyException e) {
+            CustomerChatMessage concurrentMessage = findUserMessage(userId, request.getClientMessageId());
+            if (concurrentMessage == null) {
+                throw e;
+            }
+            return existingReply(concurrentMessage, imChat, chat);
         }
-        LocalDateTime replyTime = LocalDateTime.now();
-        CustomerChatMessage assistantMessage = new CustomerChatMessage()
-                .setMessageId(redisIdWorker.nextId("chat_message"))
-                .setImChatId(request.getImChatId())
-                .setChatId(request.getChatId())
-                .setUserId(userId)
-                .setSenderType(SENDER_ASSISTANT)
-                .setMessageType(MESSAGE_TYPE_TEXT)
-                .setContent(reply)
-                .setReplyToMessageId(userMessage.getMessageId())
-                .setCreateTime(replyTime);
-        messageMapper.insert(assistantMessage);
-        updateActivityOnly(imChat, chat, replyTime);
-
-        return toReply(userMessage, assistantMessage, imChat);
+        updateConversationActivity(imChat, chat, userMessage.getContent(), now);
+        return processAgentMessage(userMessage, imChat, chat, run);
     }
 
     @Override
@@ -271,7 +273,8 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
                 .last("LIMIT 1"));
     }
 
-    private ChatReplyDTO existingReply(CustomerChatMessage userMessage, CustomerImChat imChat) {
+    private ChatReplyDTO existingReply(CustomerChatMessage userMessage, CustomerImChat imChat,
+                                       CustomerChat chat) {
         CustomerChatMessage assistantMessage = messageMapper.selectOne(
                 new LambdaQueryWrapper<CustomerChatMessage>()
                         .eq(CustomerChatMessage::getReplyToMessageId, userMessage.getMessageId())
@@ -281,9 +284,117 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
             if (isHumanMode(imChat)) {
                 return toReply(userMessage, null, imChat);
             }
-            throw new ChatBusinessException("该消息正在处理中，请稍后重试");
+            CustomerAgentRun run = agentRunService.findByUserMessageId(userMessage.getMessageId());
+            if (run == null) {
+                run = agentRunService.createPending(userMessage);
+            }
+            return processAgentMessage(userMessage, imChat, chat, run);
         }
         return toReply(userMessage, assistantMessage, imChat);
+    }
+
+    private ChatReplyDTO processAgentMessage(CustomerChatMessage userMessage,
+                                              CustomerImChat imChat,
+                                              CustomerChat chat,
+                                              CustomerAgentRun run) {
+        if (!agentRunService.claim(run.getRunId())) {
+            throw new ChatBusinessException("该消息正在处理中，请稍后重试");
+        }
+
+        AgentRunResponseDTO agentResponse;
+        try {
+            CustomerToolContext toolContext = new CustomerToolContext(userMessage.getUserId(),
+                    userMessage.getImChatId(), userMessage.getChatId(), userMessage.getMessageId());
+            AgentRunRequestDTO agentRequest = new AgentRunRequestDTO();
+            agentRequest.setRequestId(run.getRequestId());
+            agentRequest.setThreadId(String.valueOf(userMessage.getChatId()));
+            agentRequest.setImChatId(userMessage.getImChatId());
+            agentRequest.setUserMessageId(userMessage.getMessageId());
+            agentRequest.setMessage(userMessage.getContent());
+            agentRequest.setLongTermSummary(conversationMemoryService.getLongTermMemory(imChat));
+            agentRequest.setRecentMessages(loadRecentAgentMessages(userMessage));
+            agentRequest.setToolAccessToken(tokenService.issue(toolContext, AgentToolScopes.allReadScopes()));
+            agentResponse = customerAgentClient.invoke(agentRequest);
+        } catch (AgentClientException e) {
+            agentRunService.completeFailure(run.getRunId(), e.getErrorCode(), e.isRetryable());
+            throw new ChatBusinessException(e.getMessage());
+        } catch (IllegalStateException e) {
+            agentRunService.completeFailure(run.getRunId(), "AGENT_CONFIGURATION_ERROR", false);
+            throw new ChatBusinessException("智能客服服务配置错误，请联系管理员");
+        } catch (RuntimeException e) {
+            agentRunService.completeFailure(run.getRunId(), "AGENT_INTERNAL_ERROR", true);
+            throw new ChatBusinessException("智能客服服务暂时不可用，请稍后重试或转人工");
+        }
+
+        LocalDateTime replyTime = LocalDateTime.now();
+        CustomerChatMessage assistantMessage = new CustomerChatMessage()
+                .setMessageId(redisIdWorker.nextId("chat_message"))
+                .setImChatId(userMessage.getImChatId())
+                .setChatId(userMessage.getChatId())
+                .setUserId(userMessage.getUserId())
+                .setSenderType(SENDER_ASSISTANT)
+                .setMessageType(MESSAGE_TYPE_TEXT)
+                .setContent(agentResponse.getReply().trim())
+                .setStructuredContent(toJson(agentResponse.getStructuredContent()))
+                .setReplyToMessageId(userMessage.getMessageId())
+                .setCreateTime(replyTime);
+        agentRunService.completeSuccess(run.getRunId(), agentResponse.getTraceId(), assistantMessage);
+        updateIntent(imChat, chat, agentResponse.getIntent());
+        updateActivityOnly(imChat, chat, replyTime);
+        return toReply(userMessage, assistantMessage, imChat);
+    }
+
+    private List<AgentMessageDTO> loadRecentAgentMessages(CustomerChatMessage currentMessage) {
+        List<CustomerChatMessage> messages = messageMapper.selectList(
+                new QueryWrapper<CustomerChatMessage>()
+                        .eq("chat_id", currentMessage.getChatId())
+                        .eq("im_chat_id", currentMessage.getImChatId())
+                        .eq("user_id", currentMessage.getUserId())
+                        .orderByDesc("message_id")
+                        .last("LIMIT 20"));
+        Collections.reverse(messages);
+        List<AgentMessageDTO> result = new ArrayList<>();
+        for (CustomerChatMessage message : messages) {
+            if (message.getContent() == null || message.getContent().isBlank()) {
+                continue;
+            }
+            result.add(new AgentMessageDTO(message.getMessageId(), roleOf(message.getSenderType()),
+                    message.getContent()));
+        }
+        return result;
+    }
+
+    private String roleOf(String senderType) {
+        if (SENDER_USER.equals(senderType)) {
+            return "user";
+        }
+        if ("SYSTEM".equals(senderType)) {
+            return "system";
+        }
+        return "assistant";
+    }
+
+    private void updateIntent(CustomerImChat imChat, CustomerChat chat, String intent) {
+        if (intent == null || intent.isBlank()) {
+            return;
+        }
+        chat.setIntent(intent);
+        chatMapper.updateById(chat);
+        if (imChat.getPrimaryIntent() == null || imChat.getPrimaryIntent().isBlank()) {
+            imChat.setPrimaryIntent(intent);
+            imChatMapper.updateById(imChat);
+        }
+    }
+
+    private String toJson(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
     }
 
     private void updateConversationActivity(CustomerImChat imChat, CustomerChat chat,

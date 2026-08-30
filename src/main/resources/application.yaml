@@ -23,13 +23,16 @@ spring:
 mybatis-plus:
   type-aliases-package: com.hmdp.entity # 别名扫描包
 dashscope:
-  api-key: ${DASHSCOPE_API_KEY:sk-f24f19825c6b4f9dafd04414e550ee83}
+  api-key: ${DASHSCOPE_API_KEY:}
   chat-model: qwen-plus
-  embedding-model: text-embedding-v3
-tavily:
-  api-key: ${TAVILY_API_KEY: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}
 customer-service:
   operator-key: ${CUSTOMER_SERVICE_OPERATOR_KEY:}
+agent-service:
+  base-url: ${AGENT_SERVICE_BASE_URL:http://127.0.0.1:8000}
+  api-key: ${AGENT_SERVICE_API_KEY:}
+  tool-jwt-secret: ${AGENT_TOOL_JWT_SECRET:}
+  connect-timeout-ms: ${AGENT_SERVICE_CONNECT_TIMEOUT_MS:2000}
+  read-timeout-ms: ${AGENT_SERVICE_READ_TIMEOUT_MS:30000}
 logging:
   level:
     com.hmdp: debug

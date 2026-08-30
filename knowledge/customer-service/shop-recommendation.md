@@ -22,16 +22,16 @@
    - 预算范围：人均消费期望
    - 位置偏好：是否有特定商圈要求
 2. 使用工具查询：
-   - 按类型推荐：使用 recommendShopsByType 工具，传入对应类型ID
-   - 按名称搜索：使用 searchShopsByName 工具，传入关键词
-   - 查看详情：使用 queryShopById 工具获取完整店铺信息
+   - 按类型推荐：使用 recommend_shops_by_type 工具，传入对应类型ID
+   - 按名称搜索：使用 search_shops_by_name 工具，传入关键词
+   - 查看详情：使用 query_shop_by_id 工具获取完整店铺信息
 3. 组织推荐结果：
    - 优先推荐评分高、销量大的店铺
    - 结合用户预算筛选合适的人均消费
    - 补充店铺亮点（如特色菜品、环境优势等）
 4. 附加建议：
-   - 提醒用户查看店铺优惠券（使用 queryVouchersByShopId）
-   - 推荐相关的探店笔记（使用 queryHotBlogs）
+   - 提醒用户查看店铺优惠券（使用 query_vouchers_by_shop_id）
+   - 推荐相关的探店笔记（使用 query_hot_blogs）
    - 建议提前预约热门店铺
 
 ## 话术模板

@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Python agent service ###
+.venv/
+agent-service/.venv/
+agent-service/.pytest_cache/
+agent-service/**/__pycache__/
+agent-service/.env
+.uv-cache/

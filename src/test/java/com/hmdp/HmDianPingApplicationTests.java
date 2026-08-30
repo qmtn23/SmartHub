@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import static com.hmdp.utils.RedisConstants.CACHE_SHOP_KEY;
 import static com.hmdp.utils.RedisConstants.SHOP_GEO_KEY;
 
-@SpringBootTest
+@SpringBootTest(properties = "dashscope.api-key=test-placeholder")
 class HmDianPingApplicationTests {
 
     @Resource

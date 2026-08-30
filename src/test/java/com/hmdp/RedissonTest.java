@@ -11,7 +11,7 @@ import javax.annotation.Resource;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@SpringBootTest
+@SpringBootTest(properties = "dashscope.api-key=test-placeholder")
 class RedissonTest {
 
     @Resource

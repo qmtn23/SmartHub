@@ -7,7 +7,7 @@ import com.hmdp.mapper.CustomerChatMapper;
 import com.hmdp.mapper.CustomerChatMessageMapper;
 import com.hmdp.mapper.CustomerImChatMapper;
 import com.hmdp.service.ConversationSummarizer;
-import com.hmdp.utils.RedisChatMemoryStore;
+import com.hmdp.service.CustomerAgentClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,14 +39,14 @@ class ConversationMemoryServiceImplTest {
     @Mock
     private ConversationSummarizer summarizer;
     @Mock
-    private RedisChatMemoryStore chatMemoryStore;
+    private CustomerAgentClient customerAgentClient;
 
     private ConversationMemoryServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new ConversationMemoryServiceImpl(
-                chatMapper, messageMapper, imChatMapper, summarizer, chatMemoryStore);
+                chatMapper, messageMapper, imChatMapper, summarizer, customerAgentClient);
     }
 
     @Test
@@ -84,7 +84,7 @@ class ConversationMemoryServiceImplTest {
         assertEquals("用户咨询订单123退款，已确认符合条件，尚未申请", imChat.getSummary());
         verify(chatMapper, org.mockito.Mockito.times(2)).updateById(chat);
         verify(imChatMapper).updateById(imChat);
-        verify(chatMemoryStore).deleteMessages(2001L);
+        verify(customerAgentClient).deleteThread(2001L);
     }
 
     @Test

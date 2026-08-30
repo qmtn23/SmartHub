@@ -8,8 +8,8 @@ import com.hmdp.mapper.CustomerChatMapper;
 import com.hmdp.mapper.CustomerChatMessageMapper;
 import com.hmdp.mapper.CustomerImChatMapper;
 import com.hmdp.service.ConversationSummarizer;
+import com.hmdp.service.CustomerAgentClient;
 import com.hmdp.service.IConversationMemoryService;
-import com.hmdp.utils.RedisChatMemoryStore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -27,18 +27,18 @@ public class ConversationMemoryServiceImpl implements IConversationMemoryService
     private final CustomerChatMessageMapper messageMapper;
     private final CustomerImChatMapper imChatMapper;
     private final ConversationSummarizer summarizer;
-    private final RedisChatMemoryStore chatMemoryStore;
+    private final CustomerAgentClient customerAgentClient;
 
     public ConversationMemoryServiceImpl(CustomerChatMapper chatMapper,
                                          CustomerChatMessageMapper messageMapper,
                                          CustomerImChatMapper imChatMapper,
                                          ConversationSummarizer summarizer,
-                                         RedisChatMemoryStore chatMemoryStore) {
+                                         CustomerAgentClient customerAgentClient) {
         this.chatMapper = chatMapper;
         this.messageMapper = messageMapper;
         this.imChatMapper = imChatMapper;
         this.summarizer = summarizer;
-        this.chatMemoryStore = chatMemoryStore;
+        this.customerAgentClient = customerAgentClient;
     }
 
     @Override
@@ -66,7 +66,11 @@ public class ConversationMemoryServiceImpl implements IConversationMemoryService
                 imChatMapper.updateById(imChat);
             }
         } finally {
-            chatMemoryStore.deleteMessages(chat.getChatId());
+            try {
+                customerAgentClient.deleteThread(chat.getChatId());
+            } catch (RuntimeException e) {
+                log.warn("清理Agent短会话状态失败，将由TTL兜底: chatId={}", chat.getChatId(), e);
+            }
         }
     }
 
