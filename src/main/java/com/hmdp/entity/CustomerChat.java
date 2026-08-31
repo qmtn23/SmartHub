@@ -24,6 +24,7 @@ public class CustomerChat implements Serializable {
     private Long imChatId;
     private Long userId;
     private String intent;
+    private String activeAgent;
     private String summary;
     private String status;
     private LocalDateTime startTime;

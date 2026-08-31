@@ -13,6 +13,7 @@ import com.hmdp.dto.ChatRequest;
 import com.hmdp.dto.agent.AgentMessageDTO;
 import com.hmdp.dto.agent.AgentRunRequestDTO;
 import com.hmdp.dto.agent.AgentRunResponseDTO;
+import com.hmdp.dto.agent.AgentToolTokensDTO;
 import com.hmdp.entity.CustomerAgentRun;
 import com.hmdp.entity.CustomerChat;
 import com.hmdp.entity.CustomerChatMessage;
@@ -313,6 +314,12 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
             agentRequest.setMessage(userMessage.getContent());
             agentRequest.setLongTermSummary(conversationMemoryService.getLongTermMemory(imChat));
             agentRequest.setRecentMessages(loadRecentAgentMessages(userMessage));
+            agentRequest.setPreviousActiveAgent(chat.getActiveAgent());
+            agentRequest.setGraphVersion("v2");
+            agentRequest.setToolAccessTokens(new AgentToolTokensDTO(
+                    tokenService.issue(toolContext, AgentToolScopes.transactionScopes()),
+                    tokenService.issue(toolContext, AgentToolScopes.discoveryScopes())));
+            // Kept only so the v2-compatible Java build can be deployed before the v2 Python instances.
             agentRequest.setToolAccessToken(tokenService.issue(toolContext, AgentToolScopes.allReadScopes()));
             agentResponse = customerAgentClient.invoke(agentRequest);
         } catch (AgentClientException e) {
@@ -338,9 +345,15 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
                 .setStructuredContent(toJson(agentResponse.getStructuredContent()))
                 .setReplyToMessageId(userMessage.getMessageId())
                 .setCreateTime(replyTime);
-        agentRunService.completeSuccess(run.getRunId(), agentResponse.getTraceId(), assistantMessage);
-        updateIntent(imChat, chat, agentResponse.getIntent());
-        updateActivityOnly(imChat, chat, replyTime);
+        if (agentResponse.getIntent() != null && !agentResponse.getIntent().isBlank()) {
+            chat.setIntent(agentResponse.getIntent());
+        }
+        if (agentResponse.getActiveAgent() != null && !agentResponse.getActiveAgent().isBlank()) {
+            chat.setActiveAgent(agentResponse.getActiveAgent());
+        }
+        chat.setLastActiveTime(replyTime);
+        agentRunService.completeSuccess(run.getRunId(), agentResponse, assistantMessage, chat);
+        updateImChatAfterAgent(imChat, agentResponse.getIntent(), replyTime);
         return toReply(userMessage, assistantMessage, imChat);
     }
 
@@ -374,16 +387,14 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
         return "assistant";
     }
 
-    private void updateIntent(CustomerImChat imChat, CustomerChat chat, String intent) {
-        if (intent == null || intent.isBlank()) {
-            return;
-        }
-        chat.setIntent(intent);
-        chatMapper.updateById(chat);
-        if (imChat.getPrimaryIntent() == null || imChat.getPrimaryIntent().isBlank()) {
+    private void updateImChatAfterAgent(CustomerImChat imChat, String intent, LocalDateTime now) {
+        if (intent != null && !intent.isBlank()
+                && (imChat.getPrimaryIntent() == null || imChat.getPrimaryIntent().isBlank())) {
             imChat.setPrimaryIntent(intent);
-            imChatMapper.updateById(imChat);
         }
+        imChat.setLastMessageTime(now);
+        imChat.setUpdateTime(now);
+        imChatMapper.updateById(imChat);
     }
 
     private String toJson(Object value) {

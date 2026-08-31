@@ -13,5 +13,10 @@ public class AgentRunRequestDTO {
     private String message;
     private String longTermSummary;
     private List<AgentMessageDTO> recentMessages;
+    private String previousActiveAgent;
+    private String graphVersion;
+    private AgentToolTokensDTO toolAccessTokens;
+    /** @deprecated rolling-deployment compatibility with phase one only */
+    @Deprecated
     private String toolAccessToken;
 }

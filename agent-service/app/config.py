@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     dashscope_api_key: str = ""
     dashscope_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     dashscope_chat_model: str = "qwen-plus"
+    dashscope_router_model: str = "qwen-plus"
     dashscope_embedding_model: str = "text-embedding-v3"
     embedding_dimension: int = 1024
     tavily_api_key: str = ""
@@ -30,11 +31,15 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 4
     retrieval_min_score: float = 0.55
 
-    run_timeout_seconds: int = 30
+    run_timeout_seconds: int = 40
     tool_connect_timeout_seconds: float = 1.0
     tool_read_timeout_seconds: float = 5.0
-    max_agent_steps: int = 6
+    max_agent_steps: int = 4
+    graph_recursion_limit: int = 20
     max_tool_calls: int = 6
+    max_agent_activations: int = 2
+    max_handoffs: int = 1
+    router_confidence_threshold: float = 0.70
 
 
 @lru_cache

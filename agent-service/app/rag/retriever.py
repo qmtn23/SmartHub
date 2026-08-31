@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Any, TYPE_CHECKING
 
 from langchain_openai import OpenAIEmbeddings
@@ -29,19 +30,29 @@ class KnowledgeRetriever:
     def collection_exists(self) -> bool:
         return self.client.has_collection(self.settings.milvus_collection)
 
-    async def asearch(self, query: str) -> list[dict[str, Any]]:
-        return await asyncio.to_thread(self.search, query)
+    async def asearch(self, query: str, categories: list[str] | None = None) -> list[dict[str, Any]]:
+        return await asyncio.to_thread(self.search, query, categories)
 
-    def search(self, query: str) -> list[dict[str, Any]]:
+    def search(self, query: str, categories: list[str] | None = None) -> list[dict[str, Any]]:
         if not self.collection_exists():
             return []
         vector = self.embeddings.embed_query(query)
+        allowed = {"complaint-handling", "platform-faq", "refund-process", "shop-recommendation", "voucher-guide"}
+        selected = sorted(set(categories or []) & allowed)
+        filter_expression = None
+        if selected:
+            filter_expression = "category in " + json.dumps(selected, ensure_ascii=False)
+        search_kwargs: dict[str, Any] = {
+            "collection_name": self.settings.milvus_collection,
+            "data": [vector],
+            "limit": self.settings.retrieval_top_k,
+            "output_fields": ["content", "source", "category", "version"],
+            "search_params": {"metric_type": "COSINE", "params": {}},
+        }
+        if filter_expression:
+            search_kwargs["filter"] = filter_expression
         rows = self.client.search(
-            collection_name=self.settings.milvus_collection,
-            data=[vector],
-            limit=self.settings.retrieval_top_k,
-            output_fields=["content", "source", "category", "version"],
-            search_params={"metric_type": "COSINE", "params": {}},
+            **search_kwargs,
         )
         matches: list[dict[str, Any]] = []
         for row in rows[0] if rows else []:

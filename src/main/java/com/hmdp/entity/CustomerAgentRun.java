@@ -27,6 +27,15 @@ public class CustomerAgentRun implements Serializable {
     private Integer attemptCount;
     private String traceId;
     private String errorCode;
+    private String graphVersion;
+    private String entryAgent;
+    private String finalAgent;
+    private String routeHistory;
+    private Integer handoffCount;
+    private Integer modelCallCount;
+    private Integer toolCallCount;
+    private Integer promptTokens;
+    private Integer completionTokens;
     private LocalDateTime startedTime;
     private LocalDateTime finishedTime;
     private LocalDateTime updateTime;
