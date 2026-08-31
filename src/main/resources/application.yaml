@@ -32,7 +32,7 @@ agent-service:
   api-key: ${AGENT_SERVICE_API_KEY:}
   tool-jwt-secret: ${AGENT_TOOL_JWT_SECRET:}
   connect-timeout-ms: ${AGENT_SERVICE_CONNECT_TIMEOUT_MS:2000}
-  read-timeout-ms: ${AGENT_SERVICE_READ_TIMEOUT_MS:45000}
+  read-timeout-ms: ${AGENT_SERVICE_READ_TIMEOUT_MS:60000}
 logging:
   level:
     com.hmdp: debug

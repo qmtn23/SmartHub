@@ -39,7 +39,7 @@ class FakeGraph:
         }
         assert context["request_id"] == "101"
         assert context["result_cache"] is not None
-        assert config["configurable"]["checkpoint_ns"] == "customer_service_v2"
+        assert config["configurable"]["checkpoint_ns"] == "customer_service_v3"
         return {
             "final_response": "测试回复",
             "primary_intent": "ORDER_QUERY",
@@ -48,6 +48,8 @@ class FakeGraph:
             "route_history": [{"agent": "transaction_agent", "intent": "ORDER_QUERY"}],
             "model_call_count": 2,
             "tool_call_count": 1,
+            "execution_mode": "SIMPLE",
+            "orchestrator": "router",
         }
 
 
@@ -97,11 +99,11 @@ async def test_successful_run_is_cached_by_request_id(monkeypatch):
     assert first.status_code == 200
     assert second.status_code == 200
     assert first.json()["reply"] == "测试回复"
-    assert first.json()["graphVersion"] == "v2"
+    assert first.json()["graphVersion"] == "v3"
     assert first.json()["activeAgent"] == "transaction_agent"
     assert second.json()["runId"] == first.json()["runId"]
     assert graph.calls == 1
-    assert "agent:v2:run:101:result" in redis.values
+    assert "agent:v3:run:101:result" in redis.values
     get_settings.cache_clear()
 
 

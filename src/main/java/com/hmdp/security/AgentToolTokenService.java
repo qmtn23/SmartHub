@@ -11,6 +11,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +46,7 @@ public class AgentToolTokenService {
 
     @SuppressWarnings("unchecked")
     public AgentToolPrincipal parse(String token) {
+        requireCanonicalJwt(token);
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(signingKey())
                 .requireAudience(AUDIENCE)
@@ -61,6 +63,23 @@ public class AgentToolTokenService {
                 numberClaim(claims, "chatId"),
                 numberClaim(claims, "userMessageId"),
                 scopes);
+    }
+
+    private void requireCanonicalJwt(String token) {
+        if (token == null) {
+            throw new IllegalArgumentException("工具令牌不能为空");
+        }
+        String[] parts = token.split("\\.", -1);
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("工具令牌格式非法");
+        }
+        Base64.Decoder decoder = Base64.getUrlDecoder();
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        for (String part : parts) {
+            if (part.isEmpty() || !encoder.encodeToString(decoder.decode(part)).equals(part)) {
+                throw new IllegalArgumentException("工具令牌不是规范Base64URL编码");
+            }
+        }
     }
 
     private Long numberClaim(Claims claims, String name) {

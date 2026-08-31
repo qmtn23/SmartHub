@@ -36,6 +36,12 @@ public class CustomerAgentRun implements Serializable {
     private Integer toolCallCount;
     private Integer promptTokens;
     private Integer completionTokens;
+    private String executionMode;
+    private String planId;
+    private Integer supervisorIterations;
+    private Integer parallelTaskCount;
+    private String taskOutcomes;
+    private String orchestrator;
     private LocalDateTime startedTime;
     private LocalDateTime finishedTime;
     private LocalDateTime updateTime;

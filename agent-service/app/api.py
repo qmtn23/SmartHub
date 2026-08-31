@@ -8,7 +8,10 @@ from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from opentelemetry import trace
 
 from app.config import get_settings
-from app.graph.builder import RouterInvalidResponseError
+from app.graph.builder import (
+    AllAgentTasksFailedError, RouterInvalidResponseError,
+    SupervisorInvalidPlanError, SupervisorInvalidReviewError,
+)
 from app.observability import errors, run_latency
 from app.schemas import AgentRunRequest, AgentRunResponse
 
@@ -64,8 +67,8 @@ async def run_customer_service(
 
     runtime = request.app.state.runtime
     settings = get_settings()
-    result_key = f"agent:v2:run:{payload.request_id}:result"
-    lock_key = f"agent:v2:run:{payload.request_id}:lock"
+    result_key = f"agent:v3:run:{payload.request_id}:result"
+    lock_key = f"agent:v3:run:{payload.request_id}:lock"
     cached = await runtime.redis.get(result_key)
     if cached:
         return AgentRunResponse.model_validate_json(cached)
@@ -98,7 +101,7 @@ async def run_customer_service(
         graph_config = {
             "configurable": {
                 "thread_id": payload.thread_id,
-                "checkpoint_ns": "customer_service_v2",
+                "checkpoint_ns": "customer_service_v3",
             },
             "recursion_limit": settings.graph_recursion_limit,
         }
@@ -124,6 +127,7 @@ async def run_customer_service(
                             "request_id": payload.request_id,
                             "result_cache": runtime.redis,
                             "result_ttl_seconds": settings.result_ttl_seconds,
+                            "parallel_semaphore": asyncio.Semaphore(settings.max_parallel_agents),
                         },
                     ),
                     timeout=settings.run_timeout_seconds,
@@ -135,7 +139,7 @@ async def run_customer_service(
                 active_agent=result.get("active_agent", "general_support_agent"),
                 business_refs=result.get("business_refs", []),
                 trace_id=result.get("trace_id", trace_id),
-                graph_version="v2",
+                graph_version="v3",
                 route_history=result.get("route_history", []),
                 handoff_count=result.get("handoff_count", 0),
                 model_call_count=result.get("model_call_count", 0),
@@ -144,6 +148,12 @@ async def run_customer_service(
                     "prompt_tokens": result.get("prompt_tokens", 0),
                     "completion_tokens": result.get("completion_tokens", 0),
                 },
+                execution_mode=result.get("execution_mode", "SIMPLE"),
+                plan_id=result.get("plan_id"),
+                supervisor_iterations=result.get("supervisor_iterations", 0),
+                parallel_task_count=result.get("parallel_task_count", 0),
+                task_outcomes=result.get("task_outcomes", []),
+                orchestrator=result.get("orchestrator", "router"),
             )
             await runtime.redis.set(
                 result_key,
@@ -152,7 +162,7 @@ async def run_customer_service(
             )
             latency_attributes = {
                 "outcome": "success",
-                "mode": "multi_intent" if response.handoff_count else "single_intent",
+                "mode": "complex" if response.execution_mode == "COMPLEX" else "simple",
             }
             return response
         except asyncio.TimeoutError as exc:
@@ -163,6 +173,11 @@ async def run_customer_service(
             latency_attributes["error_code"] = exc.code
             errors.add(1, {"code": exc.code})
             raise HTTPException(status_code=502, detail=exc.code) from exc
+        except (SupervisorInvalidPlanError, SupervisorInvalidReviewError, AllAgentTasksFailedError) as exc:
+            code = exc.code
+            latency_attributes["error_code"] = code
+            errors.add(1, {"code": code})
+            raise HTTPException(status_code=502, detail=code) from exc
         except Exception:
             latency_attributes["error_code"] = "AGENT_INTERNAL_ERROR"
             errors.add(1, {"code": "AGENT_INTERNAL_ERROR"})

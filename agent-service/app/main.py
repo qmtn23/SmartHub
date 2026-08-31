@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI):
     graph = build_customer_service_graph(
         model=build_chat_model(settings),
         router_model=build_chat_model(settings, router=True),
+        supervisor_model=build_chat_model(settings, router=True),
         tools_by_agent=tools_by_agent,
         checkpointer=checkpointer,
         settings=settings,
@@ -54,5 +55,5 @@ async def lifespan(app: FastAPI):
 trace.set_tracer_provider(TracerProvider())
 metrics.set_meter_provider(MeterProvider())
 
-app = FastAPI(title="SmartHub Agent Service", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="SmartHub Agent Service", version="0.3.0", lifespan=lifespan)
 app.include_router(router)

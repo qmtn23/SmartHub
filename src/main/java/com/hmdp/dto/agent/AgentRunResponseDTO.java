@@ -21,4 +21,10 @@ public class AgentRunResponseDTO {
     private Integer modelCallCount;
     private Integer toolCallCount;
     private AgentUsageDTO usage;
+    private String executionMode;
+    private String planId;
+    private Integer supervisorIterations;
+    private Integer parallelTaskCount;
+    private List<AgentTaskOutcomeDTO> taskOutcomes;
+    private String orchestrator;
 }

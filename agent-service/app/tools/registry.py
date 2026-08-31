@@ -28,6 +28,7 @@ class RunToolContext:
     request_id: str = ""
     result_cache: Any | None = None
     result_ttl_seconds: int = 86400
+    graph_version: str = "v3"
     call_count: int = 0
     business_refs: list[dict[str, Any]] = field(default_factory=list)
     handoff_request: dict[str, Any] | None = None
@@ -71,7 +72,7 @@ def build_agent_tools(
         if context.result_cache is not None and context.request_id:
             signature = json.dumps({"tool": tool_name, "payload": payload}, sort_keys=True, ensure_ascii=False)
             digest = hashlib.sha256(signature.encode("utf-8")).hexdigest()
-            cache_key = f"agent:v2:run:{context.request_id}:tool:{digest}"
+            cache_key = f"agent:{context.graph_version}:run:{context.request_id}:tool:{digest}"
             cached = await context.result_cache.get(cache_key)
             if cached:
                 cached_result = json.loads(cached)

@@ -61,7 +61,7 @@ public class CustomerAgentRunService {
                 .setChatId(userMessage.getChatId())
                 .setUserId(userMessage.getUserId())
                 .setStatus(PENDING)
-                .setGraphVersion("v2")
+                .setGraphVersion("v3")
                 .setRetryable(false)
                 .setAttemptCount(0)
                 .setUpdateTime(now);
@@ -89,7 +89,7 @@ public class CustomerAgentRunService {
                 .setStatus(SUCCEEDED)
                 .setRetryable(false)
                 .setTraceId(response.getTraceId())
-                .setGraphVersion(defaultString(response.getGraphVersion(), "v2"))
+                .setGraphVersion(defaultString(response.getGraphVersion(), "v3"))
                 .setEntryAgent(entryAgent(response))
                 .setFinalAgent(response.getActiveAgent())
                 .setRouteHistory(toJson(response.getRouteHistory()))
@@ -98,6 +98,12 @@ public class CustomerAgentRunService {
                 .setToolCallCount(defaultInt(response.getToolCallCount()))
                 .setPromptTokens(response.getUsage() == null ? 0 : defaultInt(response.getUsage().getPromptTokens()))
                 .setCompletionTokens(response.getUsage() == null ? 0 : defaultInt(response.getUsage().getCompletionTokens()))
+                .setExecutionMode(defaultString(response.getExecutionMode(), "SIMPLE"))
+                .setPlanId(response.getPlanId())
+                .setSupervisorIterations(defaultInt(response.getSupervisorIterations()))
+                .setParallelTaskCount(defaultInt(response.getParallelTaskCount()))
+                .setTaskOutcomes(toJson(response.getTaskOutcomes()))
+                .setOrchestrator(defaultString(response.getOrchestrator(), "router"))
                 .setFinishedTime(LocalDateTime.now())
                 .setUpdateTime(LocalDateTime.now());
         runMapper.updateById(update);
@@ -107,9 +113,12 @@ public class CustomerAgentRunService {
         if (response.getRouteHistory() == null || response.getRouteHistory().isEmpty()) {
             return response.getActiveAgent();
         }
-        Map<String, Object> first = response.getRouteHistory().get(0);
-        Object value = first.get("agent");
-        return value == null ? response.getActiveAgent() : String.valueOf(value);
+        return response.getRouteHistory().stream()
+                .map(item -> item.get("agent"))
+                .filter(value -> value != null && !String.valueOf(value).isBlank())
+                .map(String::valueOf)
+                .findFirst()
+                .orElse(response.getActiveAgent());
     }
 
     private String toJson(Object value) {

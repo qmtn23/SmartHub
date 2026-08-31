@@ -31,13 +31,17 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 4
     retrieval_min_score: float = 0.55
 
-    run_timeout_seconds: int = 40
+    run_timeout_seconds: int = 55
     tool_connect_timeout_seconds: float = 1.0
     tool_read_timeout_seconds: float = 5.0
     max_agent_steps: int = 4
-    graph_recursion_limit: int = 20
-    max_tool_calls: int = 6
-    max_agent_activations: int = 2
+    graph_recursion_limit: int = 40
+    max_tool_calls: int = 8
+    max_tool_calls_per_task: int = 4
+    max_agent_activations: int = 3
+    max_parallel_agents: int = 2
+    max_execution_waves: int = 3
+    max_supervisor_replans: int = 1
     max_handoffs: int = 1
     router_confidence_threshold: float = 0.70
 

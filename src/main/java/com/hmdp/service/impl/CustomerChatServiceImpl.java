@@ -315,12 +315,10 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
             agentRequest.setLongTermSummary(conversationMemoryService.getLongTermMemory(imChat));
             agentRequest.setRecentMessages(loadRecentAgentMessages(userMessage));
             agentRequest.setPreviousActiveAgent(chat.getActiveAgent());
-            agentRequest.setGraphVersion("v2");
+            agentRequest.setGraphVersion("v3");
             agentRequest.setToolAccessTokens(new AgentToolTokensDTO(
                     tokenService.issue(toolContext, AgentToolScopes.transactionScopes()),
                     tokenService.issue(toolContext, AgentToolScopes.discoveryScopes())));
-            // Kept only so the v2-compatible Java build can be deployed before the v2 Python instances.
-            agentRequest.setToolAccessToken(tokenService.issue(toolContext, AgentToolScopes.allReadScopes()));
             agentResponse = customerAgentClient.invoke(agentRequest);
         } catch (AgentClientException e) {
             agentRunService.completeFailure(run.getRunId(), e.getErrorCode(), e.isRetryable());

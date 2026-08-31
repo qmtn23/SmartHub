@@ -117,7 +117,7 @@ class CustomerChatServiceImplTest {
         agentResponse.setReply("已为您查询");
         agentResponse.setIntent("GENERAL");
         agentResponse.setActiveAgent("transaction_agent");
-        agentResponse.setGraphVersion("v2");
+        agentResponse.setGraphVersion("v3");
         agentResponse.setTraceId("trace-1");
         when(customerAgentClient.invoke(any())).thenReturn(agentResponse);
 
@@ -137,7 +137,7 @@ class CustomerChatServiceImplTest {
                 String.valueOf(chatId).equals(agentRequest.getThreadId())
                         && "用户此前咨询过该订单".equals(agentRequest.getLongTermSummary())
                         && "general_support_agent".equals(agentRequest.getPreviousActiveAgent())
-                        && "v2".equals(agentRequest.getGraphVersion())
+                        && "v3".equals(agentRequest.getGraphVersion())
                         && agentRequest.getToolAccessTokens() != null
                         && "tool-token".equals(agentRequest.getToolAccessTokens().getTransactionAgentToken())
                         && "tool-token".equals(agentRequest.getToolAccessTokens().getDiscoveryAgentToken())));
@@ -147,7 +147,6 @@ class CustomerChatServiceImplTest {
                         "transaction_agent".equals(updatedChat.getActiveAgent())));
         verify(tokenService).issue(any(), org.mockito.Mockito.eq(com.hmdp.security.AgentToolScopes.transactionScopes()));
         verify(tokenService).issue(any(), org.mockito.Mockito.eq(com.hmdp.security.AgentToolScopes.discoveryScopes()));
-        verify(tokenService).issue(any(), org.mockito.Mockito.eq(com.hmdp.security.AgentToolScopes.allReadScopes()));
         verify(agentRunService).createPendingWithUserMessage(any(CustomerChatMessage.class));
     }
 

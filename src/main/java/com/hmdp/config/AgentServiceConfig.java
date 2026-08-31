@@ -13,7 +13,7 @@ public class AgentServiceConfig {
     @Bean("agentRestTemplate")
     public RestTemplate agentRestTemplate(RestTemplateBuilder builder,
                                            @Value("${agent-service.connect-timeout-ms:2000}") int connectTimeout,
-                                           @Value("${agent-service.read-timeout-ms:45000}") int readTimeout) {
+                                           @Value("${agent-service.read-timeout-ms:60000}") int readTimeout) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(connectTimeout);
         factory.setReadTimeout(readTimeout);
