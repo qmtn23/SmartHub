@@ -7,13 +7,14 @@ from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.types import Command
 
 from app.config import Settings
 from app.graph.builder import (
     AllAgentTasksFailedError, RouterInvalidResponseError, SupervisorInvalidPlanError,
     SupervisorInvalidReviewError, build_customer_service_graph,
 )
-from app.schemas import RouteDecision, SupervisorPlan, SupervisorReview
+from app.schemas import ResolutionDecision, RouteDecision, SupervisorPlan, SupervisorReview
 from app.tools.registry import build_agent_tools
 
 
@@ -101,13 +102,20 @@ def review(action="COMPLETE", new_tasks=None):
     })
 
 
-def graph_for(model, route_decisions, plans=None, reviews=None, tools_by_agent=None):
+def resolution_response():
+    return ResolutionDecision.model_validate({
+        "resolutionType": "RESPONSE_ONLY", "reasonCode": "ANSWER_ONLY"
+    })
+
+
+def graph_for(model, route_decisions, plans=None, reviews=None, tools_by_agent=None, resolutions=None):
     return build_customer_service_graph(
         model=model,
         router_model=FakeStructuredModel({"RouteDecision": route_decisions}),
         supervisor_model=FakeStructuredModel({
             "SupervisorPlan": plans or [],
             "SupervisorReview": reviews or [],
+            "ResolutionDecision": resolutions or [resolution_response()],
         }),
         tools_by_agent=tools_by_agent or {
             "general_support_agent": [], "transaction_agent": [], "discovery_agent": [],
@@ -122,14 +130,14 @@ def graph_input(message="怎么登录？"):
         "request_id": "11", "thread_id": "22", "im_chat_id": 33, "user_message_id": 11,
         "message": message, "long_term_summary": "暂无",
         "recent_messages": [{"message_id": 11, "role": "user", "content": message}],
-        "previous_active_agent": None, "graph_version": "v3", "run_id": "run", "trace_id": "trace",
+        "previous_active_agent": None, "graph_version": "v4", "run_id": "run", "trace_id": "trace",
     }
 
 
 async def invoke(graph, message="怎么登录？"):
     return await graph.ainvoke(
         graph_input(message),
-        config={"configurable": {"thread_id": "22", "checkpoint_ns": "customer_service_v3"}, "recursion_limit": 40},
+        config={"configurable": {"thread_id": "22:run", "checkpoint_ns": "customer_service_v4"}, "recursion_limit": 48},
         context={
             "tool_access_tokens": {"transaction_agent": "tx", "discovery_agent": "discovery"},
             "request_id": "11", "result_cache": None, "result_ttl_seconds": 86400,
@@ -222,7 +230,7 @@ async def test_independent_branch_failure_returns_successful_partial_result():
     assert "未完成" in result["final_response"]
 
 
-async def test_failed_prerequisite_skips_dependent_task_and_all_failed_run_errors():
+async def test_failed_prerequisite_skips_dependent_task_and_requests_handoff():
     model = ConcurrentFakeChatModel(fail_agents={"transaction_agent"})
     route = decision("ORDER_QUERY", [
         {"targetAgent": "transaction_agent", "intent": "ORDER_QUERY", "userGoal": "查订单"},
@@ -232,8 +240,9 @@ async def test_failed_prerequisite_skips_dependent_task_and_all_failed_run_error
         {"taskId": "orders", "targetAgent": "transaction_agent", "intent": "ORDER_QUERY", "userGoal": "查订单", "dependsOn": []},
         {"taskId": "policy", "targetAgent": "general_support_agent", "intent": "AFTER_SALES_POLICY", "userGoal": "退款规则", "dependsOn": ["orders"]},
     ])
-    with pytest.raises(AllAgentTasksFailedError):
-        await invoke(graph_for(model, [route], [execution_plan], [review()]), "查订单并说明退款规则")
+    result = await invoke(graph_for(model, [route], [execution_plan], [review()]), "查订单并说明退款规则")
+    assert result["run_status"] == "HANDOFF_REQUESTED"
+    assert result["handoff_proposal"]["reason_code"] == "ALL_REQUIRED_TOOLS_FAILED_FINAL"
 
 
 async def test_supervisor_replans_at_most_once_with_remaining_budget():
@@ -322,6 +331,15 @@ class FakeClient:
         return {"success": True, "data": []}
 
 
+class OrderFakeClient:
+    async def call(self, path, token, payload=None):
+        return {
+            "success": True,
+            "data": [{"orderId": 9001, "status": 1, "statusText": "未支付"}],
+            "bizRefs": [{"bizType": "VOUCHER_ORDER", "bizId": 9001}],
+        }
+
+
 class FakeRetriever:
     async def asearch(self, query, categories=None):
         return []
@@ -346,3 +364,66 @@ async def test_simple_mode_keeps_one_bounded_agent_handoff():
     assert result["handoff_count"] == 1
     assert result["active_agent"] == "transaction_agent"
     assert result["final_response"] == "为你实时查询到该店铺有可用优惠券。"
+
+
+async def test_action_proposal_interrupts_and_resumes_without_write_tool():
+    model = ToolFakeChatModel(messages=iter([
+        AIMessage(content="", tool_calls=[{
+            "name": "query_current_user_orders", "args": {}, "id": "orders-1", "type": "tool_call",
+        }]),
+        AIMessage(content="订单9001当前未支付，可以申请取消。"),
+    ]))
+    tools = build_agent_tools(Settings(_env_file=None), OrderFakeClient(), FakeRetriever())
+    route = decision("ORDER_CANCEL", [
+        {"targetAgent": "transaction_agent", "intent": "ORDER_CANCEL", "userGoal": "取消订单9001"}
+    ])
+    resolution = ResolutionDecision.model_validate({
+        "resolutionType": "ACTION_PROPOSAL", "actionType": "CANCEL_UNPAID_ORDER",
+        "targetOrderId": 9001, "userFacingSummary": "订单9001当前未支付",
+        "confirmationPrompt": "请确认", "reasonCode": "ELIGIBLE_CANCEL",
+    })
+    graph = graph_for(model, [route], tools_by_agent=tools, resolutions=[resolution])
+    config = {"configurable": {"thread_id": "22:run", "checkpoint_ns": "customer_service_v4"},
+              "recursion_limit": 48}
+    context = {
+        "tool_access_tokens": {"transaction_agent": "tx", "discovery_agent": "discovery"},
+        "request_id": "11", "result_cache": None, "result_ttl_seconds": 86400,
+        "parallel_semaphore": asyncio.Semaphore(2),
+    }
+    pending = await graph.ainvoke(graph_input("取消订单9001"), config=config, context=context)
+    assert pending["run_status"] == "AWAITING_CONFIRMATION"
+    assert pending["action_proposal"]["order_id"] == 9001
+    resumed = await graph.ainvoke(Command(resume={"action_outcome": {
+        "status": "SUCCEEDED", "result_code": "ORDER_CANCELLED", "message": "订单已取消。",
+        "business_refs": [{"biz_type": "VOUCHER_ORDER", "biz_id": 9001}],
+    }}), config=config, context=context)
+    assert resumed["final_response"] == "订单已取消。"
+    assert resumed["run_status"] == "COMPLETED"
+
+
+async def test_existing_pending_action_prevents_second_action_proposal():
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="可以继续回答你的新问题。")]))
+    route = decision("GENERAL", [
+        {"targetAgent": "general_support_agent", "intent": "GENERAL", "userGoal": "其他问题"}
+    ])
+    resolution = ResolutionDecision.model_validate({
+        "resolutionType": "ACTION_PROPOSAL", "actionType": "REQUEST_REFUND",
+        "targetOrderId": 9001, "reasonCode": "MODEL_ATTEMPTED_SECOND_ACTION",
+    })
+    graph = graph_for(model, [route], resolutions=[resolution])
+    payload = graph_input("顺便再申请退款")
+    payload["pending_action"] = {
+        "action_request_id": "action-1", "action_type": "CANCEL_UNPAID_ORDER",
+        "target_biz_type": "VOUCHER_ORDER", "target_biz_id": 9001,
+        "expires_at": "2026-09-01T01:00:00",
+    }
+    result = await graph.ainvoke(
+        payload,
+        config={"configurable": {"thread_id": "22:run", "checkpoint_ns": "customer_service_v4"},
+                "recursion_limit": 48},
+        context={"tool_access_tokens": {"transaction_agent": "tx", "discovery_agent": "discovery"},
+                 "request_id": "11", "result_cache": None, "result_ttl_seconds": 86400,
+                 "parallel_semaphore": asyncio.Semaphore(2)},
+    )
+    assert result["run_status"] == "COMPLETED"
+    assert result.get("action_proposal") is None

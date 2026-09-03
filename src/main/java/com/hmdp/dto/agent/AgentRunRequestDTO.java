@@ -15,6 +15,7 @@ public class AgentRunRequestDTO {
     private List<AgentMessageDTO> recentMessages;
     private String previousActiveAgent;
     private String graphVersion;
+    private AgentPendingActionDTO pendingAction;
     private AgentToolTokensDTO toolAccessTokens;
     /** @deprecated rolling-deployment compatibility with phase one only */
     @Deprecated

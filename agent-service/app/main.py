@@ -55,5 +55,5 @@ async def lifespan(app: FastAPI):
 trace.set_tracer_provider(TracerProvider())
 metrics.set_meter_provider(MeterProvider())
 
-app = FastAPI(title="SmartHub Agent Service", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="SmartHub Agent Service", version="0.4.0", lifespan=lifespan)
 app.include_router(router)

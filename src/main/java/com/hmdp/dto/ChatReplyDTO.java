@@ -11,4 +11,6 @@ public class ChatReplyDTO {
     private String reply;
     private String conversationStatus;
     private String handlerType;
+    private String runStatus;
+    private String actionRequestId;
 }

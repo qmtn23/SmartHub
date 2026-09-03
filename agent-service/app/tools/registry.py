@@ -28,7 +28,7 @@ class RunToolContext:
     request_id: str = ""
     result_cache: Any | None = None
     result_ttl_seconds: int = 86400
-    graph_version: str = "v3"
+    graph_version: str = "v4"
     call_count: int = 0
     business_refs: list[dict[str, Any]] = field(default_factory=list)
     handoff_request: dict[str, Any] | None = None

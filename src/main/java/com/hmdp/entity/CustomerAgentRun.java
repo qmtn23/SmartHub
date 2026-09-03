@@ -42,6 +42,13 @@ public class CustomerAgentRun implements Serializable {
     private Integer parallelTaskCount;
     private String taskOutcomes;
     private String orchestrator;
+    private String resolutionType;
+    private String actionRequestId;
+    private String actionType;
+    private String actionStatus;
+    private String interruptReason;
+    private Integer resumeCount;
+    private String handoffReasonCode;
     private LocalDateTime startedTime;
     private LocalDateTime finishedTime;
     private LocalDateTime updateTime;

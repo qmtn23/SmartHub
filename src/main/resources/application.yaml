@@ -32,7 +32,12 @@ agent-service:
   api-key: ${AGENT_SERVICE_API_KEY:}
   tool-jwt-secret: ${AGENT_TOOL_JWT_SECRET:}
   connect-timeout-ms: ${AGENT_SERVICE_CONNECT_TIMEOUT_MS:2000}
-  read-timeout-ms: ${AGENT_SERVICE_READ_TIMEOUT_MS:60000}
+  read-timeout-ms: ${AGENT_SERVICE_READ_TIMEOUT_MS:65000}
+customer-actions:
+  cancel-enabled: ${CUSTOMER_ACTION_CANCEL_ENABLED:false}
+  refund-enabled: ${CUSTOMER_ACTION_REFUND_ENABLED:false}
+  auto-handoff-enabled: ${CUSTOMER_ACTION_AUTO_HANDOFF_ENABLED:false}
+  confirmation-ttl-seconds: ${CUSTOMER_ACTION_CONFIRMATION_TTL_SECONDS:600}
 logging:
   level:
     com.hmdp: debug

@@ -11,10 +11,12 @@ import com.hmdp.config.ChatBusinessException;
 import com.hmdp.dto.ChatReplyDTO;
 import com.hmdp.dto.ChatRequest;
 import com.hmdp.dto.agent.AgentMessageDTO;
+import com.hmdp.dto.agent.AgentRunResumeRequestDTO;
 import com.hmdp.dto.agent.AgentRunRequestDTO;
 import com.hmdp.dto.agent.AgentRunResponseDTO;
 import com.hmdp.dto.agent.AgentToolTokensDTO;
 import com.hmdp.entity.CustomerAgentRun;
+import com.hmdp.entity.CustomerActionRequest;
 import com.hmdp.entity.CustomerChat;
 import com.hmdp.entity.CustomerChatMessage;
 import com.hmdp.entity.CustomerImChat;
@@ -24,13 +26,17 @@ import com.hmdp.mapper.CustomerImChatMapper;
 import com.hmdp.security.AgentToolScopes;
 import com.hmdp.security.AgentToolTokenService;
 import com.hmdp.service.CustomerAgentClient;
+import com.hmdp.service.CustomerActionService;
+import com.hmdp.service.CustomerActionCoordinator;
 import com.hmdp.service.CustomerAgentRunService;
 import com.hmdp.service.IConversationMemoryService;
 import com.hmdp.service.ICustomerChatService;
+import com.hmdp.service.ICustomerHandoffService;
 import com.hmdp.utils.CustomerToolContext;
 import com.hmdp.utils.RedisIdWorker;
 import org.springframework.stereotype.Service;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -47,16 +53,24 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
     private final CustomerChatMessageMapper messageMapper;
     private final CustomerAgentClient customerAgentClient;
     private final CustomerAgentRunService agentRunService;
+    private final CustomerActionService actionService;
+    private final CustomerActionCoordinator actionCoordinator;
+    private final ICustomerHandoffService handoffService;
     private final AgentToolTokenService tokenService;
     private final IConversationMemoryService conversationMemoryService;
     private final RedisIdWorker redisIdWorker;
     private final ObjectMapper objectMapper;
+    @Value("${customer-actions.auto-handoff-enabled:false}")
+    private boolean autoHandoffEnabled;
 
     public CustomerChatServiceImpl(CustomerImChatMapper imChatMapper,
                                    CustomerChatMapper chatMapper,
                                    CustomerChatMessageMapper messageMapper,
                                    CustomerAgentClient customerAgentClient,
                                    CustomerAgentRunService agentRunService,
+                                   CustomerActionService actionService,
+                                   CustomerActionCoordinator actionCoordinator,
+                                   ICustomerHandoffService handoffService,
                                    AgentToolTokenService tokenService,
                                    IConversationMemoryService conversationMemoryService,
                                    RedisIdWorker redisIdWorker,
@@ -66,6 +80,9 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
         this.messageMapper = messageMapper;
         this.customerAgentClient = customerAgentClient;
         this.agentRunService = agentRunService;
+        this.actionService = actionService;
+        this.actionCoordinator = actionCoordinator;
+        this.handoffService = handoffService;
         this.tokenService = tokenService;
         this.conversationMemoryService = conversationMemoryService;
         this.redisIdWorker = redisIdWorker;
@@ -191,6 +208,20 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
             throw new ChatBusinessException("当前长会话暂时不能发送消息");
         }
 
+        CustomerActionRequest activeAction = actionService.findActive(userId, request.getImChatId());
+        CustomerActionService.ConfirmationDecision confirmation = actionService.classify(userMessage.getContent());
+        if (activeAction != null && confirmation != null
+                && confirmation != CustomerActionService.ConfirmationDecision.NONE) {
+            CustomerActionService.ExecutionResult execution =
+                    actionService.executeMessage(userMessage, activeAction, confirmation);
+            updateConversationActivity(imChat, chat, userMessage.getContent(), now);
+            return completeActionMessage(userMessage, imChat, chat, execution);
+        }
+        if (activeAction == null && confirmation != null
+                && confirmation != CustomerActionService.ConfirmationDecision.NONE) {
+            return saveDeterministicReply(userMessage, imChat, chat, "当前没有待确认操作。", null);
+        }
+
         CustomerAgentRun run;
         try {
             run = agentRunService.createPendingWithUserMessage(userMessage);
@@ -285,13 +316,25 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
             if (isHumanMode(imChat)) {
                 return toReply(userMessage, null, imChat);
             }
+            CustomerActionService.ExecutionResult recovered =
+                    actionService.recoverExecutionResult(userMessage.getClientMessageId());
+            if (recovered != null) {
+                return completeActionMessage(userMessage, imChat, chat, recovered);
+            }
             CustomerAgentRun run = agentRunService.findByUserMessageId(userMessage.getMessageId());
             if (run == null) {
                 run = agentRunService.createPending(userMessage);
             }
             return processAgentMessage(userMessage, imChat, chat, run);
         }
-        return toReply(userMessage, assistantMessage, imChat);
+        ChatReplyDTO reply = toReply(userMessage, assistantMessage, imChat);
+        CustomerActionRequest action = actionService.findByProposalUserMessageId(userMessage.getMessageId());
+        if (action != null) {
+            reply.setRunStatus(CustomerActionService.AWAITING_CONFIRMATION.equals(action.getStatus())
+                    ? "AWAITING_CONFIRMATION" : "COMPLETED");
+            reply.setActionRequestId(action.getActionRequestId());
+        }
+        return reply;
     }
 
     private ChatReplyDTO processAgentMessage(CustomerChatMessage userMessage,
@@ -315,7 +358,9 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
             agentRequest.setLongTermSummary(conversationMemoryService.getLongTermMemory(imChat));
             agentRequest.setRecentMessages(loadRecentAgentMessages(userMessage));
             agentRequest.setPreviousActiveAgent(chat.getActiveAgent());
-            agentRequest.setGraphVersion("v3");
+            agentRequest.setGraphVersion("v4");
+            agentRequest.setPendingAction(actionService.toPendingContext(
+                    actionService.findActive(userMessage.getUserId(), userMessage.getImChatId())));
             agentRequest.setToolAccessTokens(new AgentToolTokensDTO(
                     tokenService.issue(toolContext, AgentToolScopes.transactionScopes()),
                     tokenService.issue(toolContext, AgentToolScopes.discoveryScopes())));
@@ -350,9 +395,152 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
             chat.setActiveAgent(agentResponse.getActiveAgent());
         }
         chat.setLastActiveTime(replyTime);
+
+        boolean javaHandoffRequired = false;
+        if ("AWAITING_CONFIRMATION".equals(agentResponse.getRunStatus())) {
+            CustomerActionService.PreparationResult preparation =
+                    actionCoordinator.prepareAndPersist(
+                            run, userMessage, agentResponse, assistantMessage, chat);
+            if (preparation.getAction() != null && preparation.isCreated()) {
+                updateImChatAfterAgent(imChat, agentResponse.getIntent(), replyTime);
+                ChatReplyDTO reply = toReply(userMessage, assistantMessage, imChat);
+                reply.setRunStatus("AWAITING_CONFIRMATION");
+                reply.setActionRequestId(preparation.getAction().getActionRequestId());
+                return reply;
+            }
+            if (preparation.isRequiresHandoff()) {
+                assistantMessage.setContent(autoHandoffEnabled
+                        ? "订单状态需要人工核实，我将为你转接人工客服继续处理。"
+                        : "订单状态需要人工核实，请点击转人工入口继续处理。");
+                assistantMessage.setStructuredContent(null);
+                agentResponse.setRunStatus(autoHandoffEnabled ? "HANDOFF_REQUESTED" : "COMPLETED");
+                javaHandoffRequired = autoHandoffEnabled;
+            } else {
+                assistantMessage.setContent(preparation.getAction() == null
+                        ? "该操作当前未开放，请联系人工客服处理。"
+                        : "当前已有一个待确认操作，请先回复“确认”或“算了”。");
+                agentResponse.setRunStatus("COMPLETED");
+                agentResponse.setResolutionType("RESPONSE_ONLY");
+                agentResponse.setActionProposal(null);
+                assistantMessage.setStructuredContent(null);
+            }
+        }
         agentRunService.completeSuccess(run.getRunId(), agentResponse, assistantMessage, chat);
         updateImChatAfterAgent(imChat, agentResponse.getIntent(), replyTime);
-        return toReply(userMessage, assistantMessage, imChat);
+        if ("HANDOFF_REQUESTED".equals(agentResponse.getRunStatus())
+                && ((javaHandoffRequired && autoHandoffEnabled) || allowAgentHandoff(userMessage, agentResponse))) {
+            String reason = agentResponse.getHandoffProposal() == null
+                    ? "ACTION_STATE_CONFLICT" : agentResponse.getHandoffProposal().getReasonCode();
+            handoffService.requestAgentHandoff(userMessage.getUserId(), userMessage.getImChatId(),
+                    userMessage.getChatId(), reason, run.getRunId(), null);
+            imChat.setStatus(IM_CHAT_STATUS_HUMAN_PENDING);
+            imChat.setHandlerType(HANDLER_TYPE_HUMAN);
+        }
+        ChatReplyDTO reply = toReply(userMessage, assistantMessage, imChat);
+        reply.setRunStatus(agentResponse.getRunStatus());
+        return reply;
+    }
+
+    private ChatReplyDTO completeActionMessage(CustomerChatMessage userMessage,
+                                               CustomerImChat imChat,
+                                               CustomerChat chat,
+                                               CustomerActionService.ExecutionResult execution) {
+        CustomerActionRequest action = execution.getAction();
+        if (execution.isRequiresHandoff() && !autoHandoffEnabled) {
+            execution.getOutcome().setMessage("订单状态已变化，请点击转人工入口继续处理。");
+        }
+        AgentRunResumeRequestDTO resume = new AgentRunResumeRequestDTO();
+        resume.setRequestId(action.getRequestId());
+        resume.setThreadId(String.valueOf(action.getChatId()));
+        resume.setActionRequestId(action.getActionRequestId());
+        resume.setActionEventId(execution.getActionEventId());
+        resume.setResumeType(execution.getResumeType());
+        resume.setActionOutcome(execution.getOutcome());
+        AgentRunResponseDTO response;
+        try {
+            agentRunService.claimForResume(action.getOriginalRunId());
+            response = customerAgentClient.resume(action.getAgentExecutionId(), resume);
+        } catch (RuntimeException e) {
+            response = actionFallback(execution);
+        }
+        LocalDateTime now = LocalDateTime.now();
+        CustomerChatMessage assistant = new CustomerChatMessage()
+                .setMessageId(redisIdWorker.nextId("chat_message"))
+                .setImChatId(userMessage.getImChatId()).setChatId(userMessage.getChatId())
+                .setUserId(userMessage.getUserId()).setSenderType(SENDER_ASSISTANT)
+                .setMessageType(MESSAGE_TYPE_TEXT).setContent(response.getReply())
+                .setStructuredContent(toJson(response.getStructuredContent()))
+                .setReplyToMessageId(userMessage.getMessageId()).setCreateTime(now);
+        chat.setLastActiveTime(now);
+        agentRunService.completeResumed(action.getOriginalRunId(), response, assistant, chat,
+                action.getStatus());
+        updateImChatAfterAgent(imChat, response.getIntent(), now);
+        if (execution.isRequiresHandoff() && autoHandoffEnabled) {
+            handoffService.requestAgentHandoff(userMessage.getUserId(), userMessage.getImChatId(),
+                    userMessage.getChatId(), "ACTION_STATE_CONFLICT",
+                    action.getOriginalRunId(), action.getActionRequestId());
+            imChat.setStatus(IM_CHAT_STATUS_HUMAN_PENDING);
+            imChat.setHandlerType(HANDLER_TYPE_HUMAN);
+        }
+        ChatReplyDTO reply = toReply(userMessage, assistant, imChat);
+        reply.setRunStatus("COMPLETED");
+        reply.setActionRequestId(action.getActionRequestId());
+        return reply;
+    }
+
+    private AgentRunResponseDTO actionFallback(CustomerActionService.ExecutionResult execution) {
+        AgentRunResponseDTO response = new AgentRunResponseDTO();
+        response.setRunId(execution.getAction().getAgentExecutionId());
+        response.setReply(execution.getOutcome().getMessage());
+        response.setIntent("ORDER_QUERY");
+        response.setActiveAgent("transaction_agent");
+        response.setGraphVersion("v4");
+        response.setRunStatus("COMPLETED");
+        response.setResolutionType("ACTION_PROPOSAL");
+        response.setExecutionMode("SIMPLE");
+        response.setOrchestrator("router");
+        return response;
+    }
+
+    private ChatReplyDTO saveDeterministicReply(CustomerChatMessage userMessage,
+                                                CustomerImChat imChat,
+                                                CustomerChat chat,
+                                                String content,
+                                                String actionRequestId) {
+        LocalDateTime now = LocalDateTime.now();
+        messageMapper.insert(userMessage);
+        CustomerChatMessage assistant = new CustomerChatMessage()
+                .setMessageId(redisIdWorker.nextId("chat_message"))
+                .setImChatId(userMessage.getImChatId()).setChatId(userMessage.getChatId())
+                .setUserId(userMessage.getUserId()).setSenderType(SENDER_ASSISTANT)
+                .setMessageType(MESSAGE_TYPE_TEXT).setContent(content)
+                .setReplyToMessageId(userMessage.getMessageId()).setCreateTime(now);
+        messageMapper.insert(assistant);
+        updateConversationActivity(imChat, chat, userMessage.getContent(), now);
+        ChatReplyDTO reply = toReply(userMessage, assistant, imChat);
+        reply.setRunStatus("COMPLETED");
+        reply.setActionRequestId(actionRequestId);
+        return reply;
+    }
+
+    private boolean allowAgentHandoff(CustomerChatMessage userMessage, AgentRunResponseDTO response) {
+        if (response.getHandoffProposal() == null || response.getHandoffProposal().getReasonCode() == null) {
+            return false;
+        }
+        String reason = response.getHandoffProposal().getReasonCode();
+        if ("USER_EXPLICIT_REQUEST".equals(reason)) {
+            String text = userMessage.getContent();
+            return text.contains("转人工") || text.contains("人工客服")
+                    || text.contains("真人客服") || text.contains("找人工");
+        }
+        if (!autoHandoffEnabled) {
+            return false;
+        }
+        if ("ALL_REQUIRED_TOOLS_FAILED_FINAL".equals(reason)) {
+            return response.getTaskOutcomes() != null && !response.getTaskOutcomes().isEmpty()
+                    && response.getTaskOutcomes().stream().noneMatch(item -> "SUCCEEDED".equals(item.getStatus()));
+        }
+        return false;
     }
 
     private List<AgentMessageDTO> loadRecentAgentMessages(CustomerChatMessage currentMessage) {

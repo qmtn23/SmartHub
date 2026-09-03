@@ -16,6 +16,10 @@ public class AgentRunResponseDTO {
     private Object structuredContent;
     private String traceId;
     private String graphVersion;
+    private String runStatus;
+    private String resolutionType;
+    private AgentActionProposalDTO actionProposal;
+    private AgentHandoffProposalDTO handoffProposal;
     private List<Map<String, Object>> routeHistory;
     private Integer handoffCount;
     private Integer modelCallCount;

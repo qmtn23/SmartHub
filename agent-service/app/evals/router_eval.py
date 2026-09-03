@@ -64,7 +64,7 @@ async def evaluate(path: Path) -> dict[str, float | int]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evaluate the v3 structured router against annotated cases")
+    parser = argparse.ArgumentParser(description="Evaluate the v4 structured router against annotated cases")
     parser.add_argument("--dataset", type=Path, default=Path("evals/router_cases.jsonl"))
     args = parser.parse_args()
     result = asyncio.run(evaluate(args.dataset))

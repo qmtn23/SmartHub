@@ -1,7 +1,7 @@
 [project]
 name = "smarthub-agent-service"
-version = "0.3.0"
-description = "LangGraph Router and Composite Supervisor service for SmartHub customer support"
+version = "0.4.0"
+description = "LangGraph customer support with supervised orchestration and safe action proposals"
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "fastapi>=0.115,<1",

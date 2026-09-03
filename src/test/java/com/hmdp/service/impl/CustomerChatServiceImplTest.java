@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hmdp.dto.ChatReplyDTO;
 import com.hmdp.dto.ChatRequest;
 import com.hmdp.dto.agent.AgentRunResponseDTO;
+import com.hmdp.dto.agent.AgentActionOutcomeDTO;
+import com.hmdp.dto.agent.AgentRunResumeRequestDTO;
+import com.hmdp.entity.CustomerActionRequest;
 import com.hmdp.entity.CustomerAgentRun;
 import com.hmdp.entity.CustomerChat;
 import com.hmdp.entity.CustomerChatMessage;
@@ -13,8 +16,11 @@ import com.hmdp.mapper.CustomerChatMessageMapper;
 import com.hmdp.mapper.CustomerImChatMapper;
 import com.hmdp.security.AgentToolTokenService;
 import com.hmdp.service.CustomerAgentClient;
+import com.hmdp.service.CustomerActionService;
+import com.hmdp.service.CustomerActionCoordinator;
 import com.hmdp.service.CustomerAgentRunService;
 import com.hmdp.service.IConversationMemoryService;
+import com.hmdp.service.ICustomerHandoffService;
 import com.hmdp.utils.RedisIdWorker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,6 +55,12 @@ class CustomerChatServiceImplTest {
     @Mock
     private CustomerAgentRunService agentRunService;
     @Mock
+    private CustomerActionService actionService;
+    @Mock
+    private CustomerActionCoordinator actionCoordinator;
+    @Mock
+    private ICustomerHandoffService handoffService;
+    @Mock
     private AgentToolTokenService tokenService;
     @Mock
     private IConversationMemoryService conversationMemoryService;
@@ -60,7 +73,8 @@ class CustomerChatServiceImplTest {
     void setUp() {
         service = new CustomerChatServiceImpl(
                 imChatMapper, chatMapper, messageMapper,
-                customerAgentClient, agentRunService, tokenService,
+                customerAgentClient, agentRunService, actionService, actionCoordinator,
+                handoffService, tokenService,
                 conversationMemoryService, redisIdWorker, new ObjectMapper());
     }
 
@@ -117,7 +131,7 @@ class CustomerChatServiceImplTest {
         agentResponse.setReply("已为您查询");
         agentResponse.setIntent("GENERAL");
         agentResponse.setActiveAgent("transaction_agent");
-        agentResponse.setGraphVersion("v3");
+        agentResponse.setGraphVersion("v4");
         agentResponse.setTraceId("trace-1");
         when(customerAgentClient.invoke(any())).thenReturn(agentResponse);
 
@@ -137,7 +151,7 @@ class CustomerChatServiceImplTest {
                 String.valueOf(chatId).equals(agentRequest.getThreadId())
                         && "用户此前咨询过该订单".equals(agentRequest.getLongTermSummary())
                         && "general_support_agent".equals(agentRequest.getPreviousActiveAgent())
-                        && "v3".equals(agentRequest.getGraphVersion())
+                        && "v4".equals(agentRequest.getGraphVersion())
                         && agentRequest.getToolAccessTokens() != null
                         && "tool-token".equals(agentRequest.getToolAccessTokens().getTransactionAgentToken())
                         && "tool-token".equals(agentRequest.getToolAccessTokens().getDiscoveryAgentToken())));
@@ -189,5 +203,53 @@ class CustomerChatServiceImplTest {
         assertEquals(null, result.getAssistantMessageId());
         verify(messageMapper).insert(any(CustomerChatMessage.class));
         verifyNoInteractions(customerAgentClient, agentRunService, tokenService);
+    }
+
+    @Test
+    void shouldExecutePendingActionBeforeCallingNormalAgent() {
+        Long userId = 7L, imChatId = 1001L, chatId = 2001L;
+        LocalDateTime now = LocalDateTime.now();
+        CustomerImChat imChat = new CustomerImChat().setImChatId(imChatId).setUserId(userId)
+                .setStatus(IM_CHAT_STATUS_BOT_ACTIVE).setTitle("订单").setLastMessageTime(now);
+        CustomerChat chat = new CustomerChat().setChatId(chatId).setImChatId(imChatId).setUserId(userId)
+                .setStatus(CHAT_STATUS_ACTIVE).setStartTime(now).setLastActiveTime(now);
+        CustomerActionRequest action = new CustomerActionRequest().setActionRequestId("action-1")
+                .setOriginalRunId("run-1").setAgentExecutionId("agent-run")
+                .setRequestId("3001").setUserId(userId).setImChatId(imChatId).setChatId(chatId)
+                .setActionType("CANCEL_UNPAID_ORDER").setTargetBizType("VOUCHER_ORDER")
+                .setTargetBizId(9001L).setStatus("SUCCEEDED").setExpiresTime(now.plusMinutes(5));
+        AgentActionOutcomeDTO outcome = new AgentActionOutcomeDTO().setStatus("SUCCEEDED")
+                .setActionType("CANCEL_UNPAID_ORDER").setTargetBizType("VOUCHER_ORDER")
+                .setTargetBizId(9001L).setResultCode("ORDER_CANCELLED").setMessage("订单已取消。");
+        CustomerActionService.ExecutionResult execution = new CustomerActionService.ExecutionResult(
+                action, "event-1", "EXECUTION_SUCCEEDED", outcome, false);
+        AgentRunResponseDTO resumed = new AgentRunResponseDTO();
+        resumed.setReply("订单已取消。");
+        resumed.setGraphVersion("v4");
+        resumed.setRunStatus("COMPLETED");
+        resumed.setActiveAgent("transaction_agent");
+
+        when(imChatMapper.selectOne(any())).thenReturn(imChat);
+        when(chatMapper.selectOne(any())).thenReturn(chat);
+        when(messageMapper.selectOne(any())).thenReturn(null);
+        when(redisIdWorker.nextId("chat_message")).thenReturn(3002L, 3003L);
+        when(actionService.findActive(userId, imChatId)).thenReturn(action);
+        when(actionService.classify("确认")).thenReturn(CustomerActionService.ConfirmationDecision.CONFIRM);
+        when(actionService.executeMessage(any(), org.mockito.Mockito.eq(action),
+                org.mockito.Mockito.eq(CustomerActionService.ConfirmationDecision.CONFIRM))).thenReturn(execution);
+        when(customerAgentClient.resume(org.mockito.Mockito.eq("agent-run"), any(AgentRunResumeRequestDTO.class)))
+                .thenReturn(resumed);
+
+        ChatRequest request = new ChatRequest();
+        request.setImChatId(imChatId);
+        request.setChatId(chatId);
+        request.setClientMessageId("confirm-1");
+        request.setMessage("确认");
+        ChatReplyDTO reply = service.sendMessage(userId, request);
+
+        assertEquals("订单已取消。", reply.getReply());
+        assertEquals("action-1", reply.getActionRequestId());
+        verify(customerAgentClient).resume(org.mockito.Mockito.eq("agent-run"), any());
+        verify(customerAgentClient, never()).invoke(any());
     }
 }

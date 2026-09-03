@@ -24,6 +24,8 @@ public class CustomerAgentRunService {
     public static final String SUCCEEDED = "SUCCEEDED";
     public static final String FAILED_RETRYABLE = "FAILED_RETRYABLE";
     public static final String FAILED_FINAL = "FAILED_FINAL";
+    public static final String AWAITING_CONFIRMATION = "AWAITING_CONFIRMATION";
+    public static final String RESUMING = "RESUMING";
 
     private final CustomerAgentRunMapper runMapper;
     private final CustomerChatMessageMapper messageMapper;
@@ -61,7 +63,7 @@ public class CustomerAgentRunService {
                 .setChatId(userMessage.getChatId())
                 .setUserId(userMessage.getUserId())
                 .setStatus(PENDING)
-                .setGraphVersion("v3")
+                .setGraphVersion("v4")
                 .setRetryable(false)
                 .setAttemptCount(0)
                 .setUpdateTime(now);
@@ -79,19 +81,63 @@ public class CustomerAgentRunService {
         return runMapper.claimForExecution(runId, LocalDateTime.now().minusSeconds(60)) == 1;
     }
 
+    public CustomerAgentRun findById(String runId) {
+        return runMapper.selectById(runId);
+    }
+
+    public boolean claimForResume(String runId) {
+        return runMapper.claimForResume(runId) == 1;
+    }
+
+    @Transactional
+    public void completeAwaiting(String runId, AgentRunResponseDTO response,
+                                 CustomerChatMessage assistantMessage, CustomerChat chat,
+                                 String actionRequestId, String actionType) {
+        messageMapper.insert(assistantMessage);
+        chatMapper.updateById(chat);
+        CustomerAgentRun update = auditUpdate(runId, response)
+                .setStatus(AWAITING_CONFIRMATION)
+                .setRetryable(false)
+                .setActionRequestId(actionRequestId)
+                .setActionType(actionType)
+                .setActionStatus(AWAITING_CONFIRMATION)
+                .setInterruptReason("USER_CONFIRMATION_REQUIRED")
+                .setFinishedTime(null)
+                .setUpdateTime(LocalDateTime.now());
+        runMapper.updateById(update);
+    }
+
     @Transactional
     public void completeSuccess(String runId, AgentRunResponseDTO response,
                                 CustomerChatMessage assistantMessage, CustomerChat chat) {
         messageMapper.insert(assistantMessage);
         chatMapper.updateById(chat);
-        CustomerAgentRun update = new CustomerAgentRun()
-                .setRunId(runId)
+        CustomerAgentRun update = auditUpdate(runId, response)
                 .setStatus(SUCCEEDED)
                 .setRetryable(false)
+                .setFinishedTime(LocalDateTime.now())
+                .setUpdateTime(LocalDateTime.now());
+        runMapper.updateById(update);
+    }
+
+    @Transactional
+    public void completeResumed(String runId, AgentRunResponseDTO response,
+                                CustomerChatMessage assistantMessage, CustomerChat chat,
+                                String actionStatus) {
+        messageMapper.insert(assistantMessage);
+        chatMapper.updateById(chat);
+        CustomerAgentRun update = auditUpdate(runId, response)
+                .setStatus(SUCCEEDED).setRetryable(false).setActionStatus(actionStatus)
+                .setFinishedTime(LocalDateTime.now()).setUpdateTime(LocalDateTime.now());
+        runMapper.updateById(update);
+    }
+
+    private CustomerAgentRun auditUpdate(String runId, AgentRunResponseDTO response) {
+        return new CustomerAgentRun()
+                .setRunId(runId)
                 .setTraceId(response.getTraceId())
-                .setGraphVersion(defaultString(response.getGraphVersion(), "v3"))
-                .setEntryAgent(entryAgent(response))
-                .setFinalAgent(response.getActiveAgent())
+                .setGraphVersion(defaultString(response.getGraphVersion(), "v4"))
+                .setEntryAgent(entryAgent(response)).setFinalAgent(response.getActiveAgent())
                 .setRouteHistory(toJson(response.getRouteHistory()))
                 .setHandoffCount(defaultInt(response.getHandoffCount()))
                 .setModelCallCount(defaultInt(response.getModelCallCount()))
@@ -104,9 +150,9 @@ public class CustomerAgentRunService {
                 .setParallelTaskCount(defaultInt(response.getParallelTaskCount()))
                 .setTaskOutcomes(toJson(response.getTaskOutcomes()))
                 .setOrchestrator(defaultString(response.getOrchestrator(), "router"))
-                .setFinishedTime(LocalDateTime.now())
-                .setUpdateTime(LocalDateTime.now());
-        runMapper.updateById(update);
+                .setResolutionType(defaultString(response.getResolutionType(), "RESPONSE_ONLY"))
+                .setHandoffReasonCode(response.getHandoffProposal() == null
+                        ? null : response.getHandoffProposal().getReasonCode());
     }
 
     private String entryAgent(AgentRunResponseDTO response) {

@@ -25,6 +25,7 @@ class CustomerServiceState(TypedDict, total=False):
     long_term_summary: str
     recent_messages: list[dict[str, Any]]
     previous_active_agent: str | None
+    pending_action: dict[str, Any] | None
     requested_graph_version: str
     graph_version: str
     run_id: str
@@ -68,6 +69,13 @@ class CustomerServiceState(TypedDict, total=False):
     completion_tokens: int
     draft_response: str
     final_response: str
+    run_status: str
+    resolution_type: str
+    resolution_decision: dict[str, Any]
+    action_proposal: dict[str, Any] | None
+    handoff_proposal: dict[str, Any] | None
+    action_outcome: dict[str, Any] | None
+    interrupt_reason: str | None
 
 
 class CustomerServiceContext(TypedDict):

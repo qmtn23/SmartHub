@@ -8,6 +8,9 @@ public interface ICustomerHandoffService {
 
     CustomerHandoff requestHandoff(Long userId, Long imChatId, Long chatId, String reason);
 
+    CustomerHandoff requestAgentHandoff(Long userId, Long imChatId, Long chatId, String reason,
+                                        String agentRunId, String actionRequestId);
+
     CustomerHandoff getCurrentHandoff(Long userId, Long imChatId);
 
     IPage<CustomerHandoff> listPending(int pageNo, int pageSize);

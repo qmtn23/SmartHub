@@ -86,6 +86,8 @@ public class CustomerHandoffServiceImpl implements ICustomerHandoffService {
                 .setHumanChatId(humanChat.getChatId())
                 .setUserId(userId)
                 .setReason(normalizeReason(reason))
+                .setReasonCode(isAgentReasonCode(reason) ? reason : null)
+                .setSource(isAgentReasonCode(reason) ? "AGENT_POLICY" : "USER")
                 .setSummary(normalizeSummary(imChat.getSummary()))
                 .setBusinessRefs(businessReferenceSnapshot(userId, imChatId))
                 .setStatus(HANDOFF_STATUS_PENDING)
@@ -97,6 +99,19 @@ public class CustomerHandoffServiceImpl implements ICustomerHandoffService {
         imChat.setStatus(IM_CHAT_STATUS_HUMAN_PENDING);
         imChat.setUpdateTime(now);
         imChatMapper.updateById(imChat);
+        return handoff;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public CustomerHandoff requestAgentHandoff(Long userId, Long imChatId, Long chatId, String reason,
+                                               String agentRunId, String actionRequestId) {
+        CustomerHandoff handoff = requestHandoff(userId, imChatId, chatId, reason);
+        handoff.setAgentRunId(agentRunId).setActionRequestId(actionRequestId)
+                .setReasonCode(reason)
+                .setSource("USER_EXPLICIT_REQUEST".equals(reason) ? "USER" : "AGENT_POLICY")
+                .setUpdateTime(LocalDateTime.now());
+        handoffMapper.updateById(handoff);
         return handoff;
     }
 
@@ -308,6 +323,14 @@ public class CustomerHandoffServiceImpl implements ICustomerHandoffService {
         }
         String normalized = reason.trim();
         return normalized.length() <= 255 ? normalized : normalized.substring(0, 255);
+    }
+
+    private boolean isAgentReasonCode(String reason) {
+        return "USER_EXPLICIT_REQUEST".equals(reason)
+                || "POLICY_REQUIRES_HUMAN".equals(reason)
+                || "REFUND_INELIGIBLE_REQUIRES_REVIEW".equals(reason)
+                || "ACTION_STATE_CONFLICT".equals(reason)
+                || "ALL_REQUIRED_TOOLS_FAILED_FINAL".equals(reason);
     }
 
     private String normalizeSummary(String summary) {

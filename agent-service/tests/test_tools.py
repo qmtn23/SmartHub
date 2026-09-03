@@ -100,7 +100,7 @@ async def test_completed_java_tool_result_is_reused_on_same_request_retry():
         reset_run_tool_context(marker)
     assert second == first
     assert len(client.calls) == 1
-    assert next(iter(cache.values)).startswith("agent:v3:run:3001:tool:")
+    assert next(iter(cache.values)).startswith("agent:v4:run:3001:tool:")
 
 
 def test_each_task_enforces_its_tool_call_budget():

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hmdp.config.AgentClientException;
 import com.hmdp.dto.agent.AgentRunRequestDTO;
 import com.hmdp.dto.agent.AgentRunResponseDTO;
+import com.hmdp.dto.agent.AgentRunResumeRequestDTO;
 import com.hmdp.service.CustomerAgentClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,6 +76,32 @@ public class LangGraphCustomerAgentClient implements CustomerAgentClient {
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Agent-Service-Key", apiKey);
         return headers;
+    }
+
+    @Override
+    public AgentRunResponseDTO resume(String runId, AgentRunResumeRequestDTO request) {
+        HttpHeaders headers = serviceHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Idempotency-Key", request.getActionEventId());
+        try {
+            ResponseEntity<AgentRunResponseDTO> response = restTemplate.exchange(
+                    baseUrl + "/v1/customer-service/runs/" + runId + "/resume",
+                    HttpMethod.POST,
+                    new HttpEntity<>(request, headers),
+                    AgentRunResponseDTO.class);
+            AgentRunResponseDTO body = response.getBody();
+            if (body == null || body.getReply() == null || body.getReply().isBlank()) {
+                throw new AgentClientException("INVALID_AGENT_RESPONSE", "智能客服未返回有效动作结果", true);
+            }
+            return body;
+        } catch (HttpStatusCodeException e) {
+            boolean retryable = e.getStatusCode().value() == 409
+                    || e.getStatusCode().value() == 429
+                    || e.getStatusCode().is5xxServerError();
+            throw new AgentClientException(errorCode(e), "智能客服恢复失败", retryable, e);
+        } catch (ResourceAccessException e) {
+            throw new AgentClientException("AGENT_UNAVAILABLE", "智能客服恢复失败", true, e);
+        }
     }
 
     private String errorCode(HttpStatusCodeException exception) {

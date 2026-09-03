@@ -49,7 +49,7 @@ class CustomerAgentRunServiceTest {
         assertEquals("3001", run.getRequestId());
         assertEquals(CustomerAgentRunService.PENDING, run.getStatus());
         assertFalse(run.getRetryable());
-        assertEquals("v3", run.getGraphVersion());
+        assertEquals("v4", run.getGraphVersion());
         verify(runMapper).insert(run);
     }
 

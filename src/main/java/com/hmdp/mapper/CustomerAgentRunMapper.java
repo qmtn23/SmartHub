@@ -16,4 +16,8 @@ public interface CustomerAgentRunMapper extends BaseMapper<CustomerAgentRun> {
             "OR (status = 'RUNNING' AND update_time < #{staleBefore}))")
     int claimForExecution(@Param("runId") String runId,
                           @Param("staleBefore") LocalDateTime staleBefore);
+
+    @Update("UPDATE tb_customer_agent_run SET status='RESUMING', resume_count=resume_count+1, " +
+            "update_time=NOW() WHERE run_id=#{runId} AND status='AWAITING_CONFIRMATION'")
+    int claimForResume(@Param("runId") String runId);
 }

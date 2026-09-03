@@ -353,6 +353,10 @@ CREATE TABLE `tb_customer_handoff` (
   `human_chat_id` bigint(20) NOT NULL COMMENT '人工接待短会话ID',
   `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '用户ID',
   `reason` varchar(255) DEFAULT NULL COMMENT '转人工原因',
+  `reason_code` varchar(64) DEFAULT NULL COMMENT '确定性转人工原因码',
+  `source` varchar(24) NOT NULL DEFAULT 'USER' COMMENT 'USER或AGENT_POLICY',
+  `agent_run_id` varchar(32) DEFAULT NULL,
+  `action_request_id` varchar(32) DEFAULT NULL,
   `summary` text COMMENT '转接摘要',
   `business_refs` text COMMENT '关联业务对象快照',
   `status` varchar(16) NOT NULL DEFAULT 'PENDING' COMMENT '转接状态',
@@ -383,7 +387,7 @@ CREATE TABLE `tb_customer_agent_run` (
   `attempt_count` int(11) NOT NULL DEFAULT 0 COMMENT '执行尝试次数',
   `trace_id` varchar(64) DEFAULT NULL COMMENT 'Agent链路追踪ID',
   `error_code` varchar(64) DEFAULT NULL COMMENT '最近错误码',
-  `graph_version` varchar(16) NOT NULL DEFAULT 'v3' COMMENT 'LangGraph版本',
+  `graph_version` varchar(16) NOT NULL DEFAULT 'v4' COMMENT 'LangGraph版本',
   `entry_agent` varchar(32) DEFAULT NULL COMMENT '入口Agent',
   `final_agent` varchar(32) DEFAULT NULL COMMENT '最终回复Agent',
   `route_history` longtext COMMENT '路由历史JSON',
@@ -398,6 +402,13 @@ CREATE TABLE `tb_customer_agent_run` (
   `parallel_task_count` int(11) NOT NULL DEFAULT 0 COMMENT '并行编排任务数',
   `task_outcomes` longtext COMMENT '领域任务执行结果JSON',
   `orchestrator` varchar(32) NOT NULL DEFAULT 'router' COMMENT 'router或supervisor',
+  `resolution_type` varchar(32) DEFAULT NULL,
+  `action_request_id` varchar(32) DEFAULT NULL,
+  `action_type` varchar(32) DEFAULT NULL,
+  `action_status` varchar(32) DEFAULT NULL,
+  `interrupt_reason` varchar(64) DEFAULT NULL,
+  `resume_count` int(11) NOT NULL DEFAULT 0,
+  `handoff_reason_code` varchar(64) DEFAULT NULL,
   `started_time` datetime DEFAULT NULL COMMENT '最近开始时间',
   `finished_time` datetime DEFAULT NULL COMMENT '完成时间',
   `update_time` datetime NOT NULL COMMENT '更新时间',
@@ -406,5 +417,51 @@ CREATE TABLE `tb_customer_agent_run` (
   UNIQUE KEY `uk_agent_run_user_message` (`user_message_id`) USING BTREE,
   KEY `idx_agent_run_chat_status` (`chat_id`, `status`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客服Agent运行审计';
+
+DROP TABLE IF EXISTS `tb_customer_action_event`;
+DROP TABLE IF EXISTS `tb_customer_action_request`;
+CREATE TABLE `tb_customer_action_request` (
+  `action_request_id` varchar(32) NOT NULL,
+  `original_run_id` varchar(32) NOT NULL,
+  `agent_execution_id` varchar(32) NOT NULL,
+  `request_id` varchar(64) NOT NULL,
+  `user_message_id` bigint(20) NOT NULL,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `im_chat_id` bigint(20) NOT NULL,
+  `chat_id` bigint(20) NOT NULL,
+  `action_type` varchar(32) NOT NULL,
+  `target_biz_type` varchar(32) NOT NULL,
+  `target_biz_id` bigint(20) NOT NULL,
+  `canonical_parameters` text,
+  `status` varchar(32) NOT NULL,
+  `active_im_chat_id` bigint(20) DEFAULT NULL,
+  `policy_version` varchar(32) NOT NULL,
+  `expires_time` datetime NOT NULL,
+  `confirmed_time` datetime DEFAULT NULL,
+  `executed_time` datetime DEFAULT NULL,
+  `result_code` varchar(64) DEFAULT NULL,
+  `result_payload` text,
+  `error_code` varchar(64) DEFAULT NULL,
+  `create_time` datetime NOT NULL,
+  `update_time` datetime NOT NULL,
+  PRIMARY KEY (`action_request_id`),
+  UNIQUE KEY `uk_action_request_origin` (`request_id`, `action_type`, `target_biz_type`, `target_biz_id`),
+  UNIQUE KEY `uk_action_active_im_chat` (`active_im_chat_id`),
+  KEY `idx_action_user_status` (`user_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客服受控业务动作';
+
+CREATE TABLE `tb_customer_action_event` (
+  `event_id` varchar(32) NOT NULL,
+  `action_request_id` varchar(32) NOT NULL,
+  `client_message_id` varchar(64) DEFAULT NULL,
+  `event_type` varchar(32) NOT NULL,
+  `from_status` varchar(32) DEFAULT NULL,
+  `to_status` varchar(32) NOT NULL,
+  `payload` text,
+  `create_time` datetime NOT NULL,
+  PRIMARY KEY (`event_id`),
+  UNIQUE KEY `uk_action_event_client_message` (`client_message_id`),
+  KEY `idx_action_event_request_time` (`action_request_id`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客服业务动作审计事件';
 
 SET FOREIGN_KEY_CHECKS = 1;

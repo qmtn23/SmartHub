@@ -26,6 +26,10 @@ public class CustomerHandoff implements Serializable {
     private Long humanChatId;
     private Long userId;
     private String reason;
+    private String reasonCode;
+    private String source;
+    private String agentRunId;
+    private String actionRequestId;
     private String summary;
     private String businessRefs;
     private String status;

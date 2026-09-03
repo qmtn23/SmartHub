@@ -24,6 +24,15 @@ class FakeRedis:
     async def delete(self, key):
         self.values.pop(key, None)
 
+    async def sadd(self, key, value):
+        self.values.setdefault(key, set()).add(value)
+
+    async def expire(self, key, seconds):
+        return key in self.values
+
+    async def smembers(self, key):
+        return self.values.get(key, set())
+
 
 class FakeGraph:
     def __init__(self):
@@ -39,7 +48,7 @@ class FakeGraph:
         }
         assert context["request_id"] == "101"
         assert context["result_cache"] is not None
-        assert config["configurable"]["checkpoint_ns"] == "customer_service_v3"
+        assert config["configurable"]["checkpoint_ns"] == "customer_service_v4"
         return {
             "final_response": "测试回复",
             "primary_intent": "ORDER_QUERY",
@@ -65,6 +74,27 @@ class FakeResumeGraph(FakeGraph):
             "primary_intent": "ORDER_QUERY",
             "active_agent": "transaction_agent",
             "business_refs": [],
+        }
+
+
+class FakeActionResumeGraph:
+    def __init__(self):
+        self.calls = 0
+
+    async def aget_state(self, config):
+        return SimpleNamespace(values={
+            "request_id": "101", "trace_id": "trace", "run_id": "agent-run",
+            "primary_intent": "ORDER_CANCEL", "active_agent": "transaction_agent",
+            "run_status": "AWAITING_CONFIRMATION",
+        }, next=("await_confirmation",))
+
+    async def ainvoke(self, graph_input, config, context):
+        self.calls += 1
+        return {
+            "run_id": "agent-run", "trace_id": "trace", "final_response": "订单已取消。",
+            "primary_intent": "ORDER_CANCEL", "active_agent": "transaction_agent",
+            "run_status": "COMPLETED", "resolution_type": "ACTION_PROPOSAL",
+            "business_refs": [{"bizType": "VOUCHER_ORDER", "bizId": 9001}],
         }
 
 
@@ -99,11 +129,11 @@ async def test_successful_run_is_cached_by_request_id(monkeypatch):
     assert first.status_code == 200
     assert second.status_code == 200
     assert first.json()["reply"] == "测试回复"
-    assert first.json()["graphVersion"] == "v3"
+    assert first.json()["graphVersion"] == "v4"
     assert first.json()["activeAgent"] == "transaction_agent"
     assert second.json()["runId"] == first.json()["runId"]
     assert graph.calls == 1
-    assert "agent:v3:run:101:result" in redis.values
+    assert "agent:v4:run:101:result" in redis.values
     get_settings.cache_clear()
 
 
@@ -130,5 +160,34 @@ async def test_retry_resumes_pending_checkpoint_without_replaying_completed_node
         )
     assert response.status_code == 200
     assert response.json()["reply"] == "恢复后的回复"
+    assert graph.calls == 1
+    get_settings.cache_clear()
+
+
+async def test_action_resume_is_idempotent_by_action_event(monkeypatch):
+    monkeypatch.setenv("AGENT_SERVICE_API_KEY", "service-secret")
+    get_settings.cache_clear()
+    app = FastAPI()
+    app.include_router(router)
+    redis = FakeRedis()
+    graph = FakeActionResumeGraph()
+    app.state.runtime = SimpleNamespace(redis=redis, graph=graph)
+    payload = {
+        "requestId": "101", "threadId": "202", "actionRequestId": "action-1",
+        "actionEventId": "event-1", "resumeType": "EXECUTION_SUCCEEDED",
+        "actionOutcome": {
+            "status": "SUCCEEDED", "actionType": "CANCEL_UNPAID_ORDER",
+            "targetBizType": "VOUCHER_ORDER", "targetBizId": 9001,
+            "resultCode": "ORDER_CANCELLED", "message": "订单已取消。", "businessRefs": [],
+        },
+    }
+    headers = {"X-Agent-Service-Key": "service-secret", "Idempotency-Key": "event-1"}
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        first = await client.post("/v1/customer-service/runs/agent-run/resume", json=payload, headers=headers)
+        second = await client.post("/v1/customer-service/runs/agent-run/resume", json=payload, headers=headers)
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["reply"] == "订单已取消。"
     assert graph.calls == 1
     get_settings.cache_clear()

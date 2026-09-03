@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hmdp.config.AgentClientException;
 import com.hmdp.dto.agent.AgentRunRequestDTO;
 import com.hmdp.dto.agent.AgentRunResponseDTO;
+import com.hmdp.dto.agent.AgentRunResumeRequestDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -21,14 +22,15 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 class LangGraphCustomerAgentClientTest {
 
     @Test
-    void shouldDeserializeV3SupervisorAuditFields() {
+    void shouldDeserializeV4SupervisorAndResolutionAuditFields() {
         RestTemplate restTemplate = new RestTemplate();
         MockRestServiceServer server = MockRestServiceServer.createServer(restTemplate);
         server.expect(once(), requestTo("http://agent/v1/customer-service/runs"))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess("{\"runId\":\"run-1\",\"reply\":\"已完成\","
                                 + "\"intent\":\"ORDER_QUERY\",\"activeAgent\":\"transaction_agent\","
-                                + "\"traceId\":\"trace-1\",\"graphVersion\":\"v3\","
+                                + "\"traceId\":\"trace-1\",\"graphVersion\":\"v4\","
+                                + "\"runStatus\":\"COMPLETED\",\"resolutionType\":\"RESPONSE_ONLY\","
                                 + "\"executionMode\":\"COMPLEX\",\"planId\":\"plan-1\","
                                 + "\"supervisorIterations\":1,\"parallelTaskCount\":2,"
                                 + "\"orchestrator\":\"supervisor\",\"businessRefs\":[],"
@@ -47,6 +49,30 @@ class LangGraphCustomerAgentClientTest {
         assertEquals("plan-1", response.getPlanId());
         assertEquals("orders", response.getTaskOutcomes().get(0).getTaskId());
         assertEquals("supervisor", response.getOrchestrator());
+        assertEquals("RESPONSE_ONLY", response.getResolutionType());
+        server.verify();
+    }
+
+    @Test
+    void shouldResumeInterruptedAction() {
+        RestTemplate restTemplate = new RestTemplate();
+        MockRestServiceServer server = MockRestServiceServer.createServer(restTemplate);
+        server.expect(once(), requestTo("http://agent/v1/customer-service/runs/agent-run/resume"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess("{\"runId\":\"agent-run\",\"reply\":\"订单已取消。\"," +
+                                "\"intent\":\"ORDER_CANCEL\",\"activeAgent\":\"transaction_agent\"," +
+                                "\"traceId\":\"trace-1\",\"graphVersion\":\"v4\"," +
+                                "\"runStatus\":\"COMPLETED\",\"businessRefs\":[]}",
+                        MediaType.APPLICATION_JSON));
+        LangGraphCustomerAgentClient client = new LangGraphCustomerAgentClient(
+                restTemplate, "http://agent", "service-key", new ObjectMapper());
+        AgentRunResumeRequestDTO request = new AgentRunResumeRequestDTO();
+        request.setActionEventId("event-1");
+
+        AgentRunResponseDTO response = client.resume("agent-run", request);
+
+        assertEquals("订单已取消。", response.getReply());
+        assertEquals("COMPLETED", response.getRunStatus());
         server.verify();
     }
 
