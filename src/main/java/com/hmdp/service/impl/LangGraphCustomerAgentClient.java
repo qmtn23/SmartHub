@@ -6,6 +6,7 @@ import com.hmdp.config.AgentClientException;
 import com.hmdp.dto.agent.AgentRunRequestDTO;
 import com.hmdp.dto.agent.AgentRunResponseDTO;
 import com.hmdp.dto.agent.AgentRunResumeRequestDTO;
+import com.hmdp.entity.CustomerChatMessage;
 import com.hmdp.service.CustomerAgentClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class LangGraphCustomerAgentClient implements CustomerAgentClient {
@@ -70,6 +76,84 @@ public class LangGraphCustomerAgentClient implements CustomerAgentClient {
         }
         restTemplate.exchange(baseUrl + "/v1/customer-service/threads/" + chatId,
                 HttpMethod.DELETE, new HttpEntity<>(serviceHeaders()), Void.class);
+    }
+
+    @Override
+    public String summarizeSession(List<CustomerChatMessage> messages) {
+        List<Map<String, String>> payloadMessages = new ArrayList<>();
+        if (messages != null) {
+            for (CustomerChatMessage message : messages) {
+                if (message == null || message.getContent() == null || message.getContent().isBlank()) {
+                    continue;
+                }
+                Map<String, String> item = new LinkedHashMap<>();
+                item.put("sender_type", message.getSenderType());
+                item.put("content", abbreviate(message.getContent(), 1000));
+                payloadMessages.add(item);
+            }
+        }
+        return postMemory("/v1/customer-service/memory/summarize-session",
+                Map.of("messages", payloadMessages));
+    }
+
+    @Override
+    public String mergeLongTermMemory(String previousSummary, String sessionSummary) {
+        Map<String, String> payload = new LinkedHashMap<>();
+        payload.put("previous_summary", previousSummary == null ? "" : previousSummary);
+        payload.put("session_summary", sessionSummary == null ? "" : sessionSummary);
+        return postMemory("/v1/customer-service/memory/merge-summary", payload);
+    }
+
+    @Override
+    public JsonNode extractTaskMemory(JsonNode memory, List<Map<String, Object>> messages) {
+        return postMemoryDiff("/v1/customer-service/memory/task-diff", Map.of("memory", memory, "messages", messages));
+    }
+
+    @Override
+    public JsonNode extractUserProfile(JsonNode profile, JsonNode tasks, List<Map<String, Object>> messages) {
+        return postMemoryDiff("/v1/customer-service/memory/profile-diff",
+                Map.of("profile", profile, "tasks", tasks, "messages", messages));
+    }
+
+    private JsonNode postMemoryDiff(String path, Object payload) {
+        HttpHeaders headers = serviceHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        try {
+            ResponseEntity<JsonNode> response = restTemplate.exchange(
+                    baseUrl + path, HttpMethod.POST,
+                    new HttpEntity<>(payload, headers), JsonNode.class);
+            JsonNode diff = response.getBody();
+            if (diff == null || !diff.path("operations").isArray())
+                throw new AgentClientException("INVALID_MEMORY_DIFF", "记忆增量格式无效", true);
+            return diff;
+        } catch (HttpStatusCodeException e) {
+            throw new AgentClientException(errorCode(e), "记忆服务暂时不可用", e.getStatusCode().value() == 429 || e.getStatusCode().is5xxServerError());
+        } catch (ResourceAccessException e) {
+            throw new AgentClientException("MEMORY_UNAVAILABLE", "记忆服务暂时不可用", true, e);
+        }
+    }
+
+    private String postMemory(String path, Object payload) {
+        HttpHeaders headers = serviceHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        try {
+            ResponseEntity<JsonNode> response = restTemplate.exchange(
+                    baseUrl + path, HttpMethod.POST, new HttpEntity<>(payload, headers), JsonNode.class);
+            String summary = response.getBody() == null ? "" : response.getBody().path("summary").asText("");
+            if (summary.isBlank()) {
+                throw new AgentClientException("INVALID_MEMORY_RESPONSE", "智能客服未返回有效会话摘要", true);
+            }
+            return summary;
+        } catch (HttpStatusCodeException e) {
+            boolean retryable = e.getStatusCode().value() == 429 || e.getStatusCode().is5xxServerError();
+            throw new AgentClientException(errorCode(e), "会话摘要服务暂时不可用", retryable, e);
+        } catch (ResourceAccessException e) {
+            throw new AgentClientException("AGENT_UNAVAILABLE", "会话摘要服务暂时不可用", true, e);
+        }
+    }
+
+    private String abbreviate(String value, int maxLength) {
+        return value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 
     private HttpHeaders serviceHeaders() {

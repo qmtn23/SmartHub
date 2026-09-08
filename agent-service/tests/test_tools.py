@@ -19,7 +19,7 @@ class FakeRetriever:
     def __init__(self):
         self.categories = None
 
-    async def asearch(self, query, categories=None):
+    async def asearch(self, query, categories=None, limit=None):
         self.categories = categories
         return []
 
@@ -38,7 +38,7 @@ class FakeCache:
 async def test_agent_tool_lists_are_strictly_isolated():
     tools = build_agent_tools(Settings(_env_file=None), FakeClient(), FakeRetriever())
     assert {item.name for item in tools["general_support_agent"]} == {
-        "search_platform_knowledge", "search_external_web", "request_handoff"
+        "search_platform_knowledge", "request_handoff"
     }
     assert "query_current_user_orders" in {item.name for item in tools["transaction_agent"]}
     assert "query_current_user_orders" not in {item.name for item in tools["discovery_agent"]}
@@ -60,6 +60,24 @@ async def test_current_order_tool_forwards_transaction_token_without_user_id():
     assert context.business_refs == [{"bizType": "VOUCHER_ORDER", "bizId": 9}]
 
 
+async def test_mixed_master_context_selects_token_by_tool_scope():
+    client = FakeClient()
+    tools = build_agent_tools(Settings(_env_file=None), client, FakeRetriever())
+    all_tools = {item.name: item for values in tools.values() for item in values}
+    context = RunToolContext(
+        active_agent="pre_sales_master_agent", max_calls=6,
+        tokens={"transaction_agent": "tx-token", "discovery_agent": "discovery-token"},
+    )
+    marker = set_run_tool_context(context)
+    try:
+        await all_tools["query_vouchers_by_shop_id"].ainvoke({"shop_id": 1})
+        await all_tools["query_hot_blogs"].ainvoke({})
+    finally:
+        reset_run_tool_context(marker)
+    assert client.calls[0][1] == "tx-token"
+    assert client.calls[1][1] == "discovery-token"
+
+
 async def test_rag_category_is_forwarded_only_for_general_agent():
     retriever = FakeRetriever()
     tools = build_agent_tools(Settings(_env_file=None), FakeClient(), retriever)
@@ -70,6 +88,18 @@ async def test_rag_category_is_forwarded_only_for_general_agent():
     finally:
         reset_run_tool_context(marker)
     assert retriever.categories == ["refund-process"]
+
+
+async def test_pre_sales_master_can_use_platform_knowledge_as_plain_tool():
+    retriever = FakeRetriever()
+    tools = build_agent_tools(Settings(_env_file=None), FakeClient(), retriever)
+    rag_tool = next(item for item in tools["general_support_agent"] if item.name == "search_platform_knowledge")
+    marker = set_run_tool_context(RunToolContext(active_agent="pre_sales_master_agent", max_calls=4))
+    try:
+        await rag_tool.ainvoke({"query": "登录", "category": "platform-faq"})
+    finally:
+        reset_run_tool_context(marker)
+    assert retriever.categories == ["platform-faq"]
 
 
 async def test_java_tool_rejects_missing_scoped_token():
@@ -100,7 +130,7 @@ async def test_completed_java_tool_result_is_reused_on_same_request_retry():
         reset_run_tool_context(marker)
     assert second == first
     assert len(client.calls) == 1
-    assert next(iter(cache.values)).startswith("agent:v4:run:3001:tool:")
+    assert next(iter(cache.values)).startswith("agent:v5:run:3001:tool:")
 
 
 def test_each_task_enforces_its_tool_call_budget():
@@ -109,3 +139,24 @@ def test_each_task_enforces_its_tool_call_budget():
         context.consume("query_hot_blogs")
     with pytest.raises(RuntimeError, match="工具调用次数已达上限"):
         context.consume("query_hot_blogs")
+
+
+def test_v5_specialists_select_their_minimum_scope_tokens():
+    tokens = {
+        "shop_agent": "shop-token", "voucher_agent": "voucher-token",
+        "content_agent": "content-token", "order_agent": "order-token",
+        "refund_agent": "refund-token", "transaction_agent": "legacy-transaction",
+        "discovery_agent": "legacy-discovery",
+    }
+    assert RunToolContext(
+        active_agent="pre_sales_master_agent", max_calls=4, tokens=tokens,
+    ).token_for("query_vouchers_by_shop_id") == "voucher-token"
+    assert RunToolContext(
+        active_agent="recommendation_agent", max_calls=4, tokens=tokens,
+    ).token_for("search_shops_by_name") == "shop-token"
+    assert RunToolContext(
+        active_agent="after_sales_master_agent", max_calls=4, tokens=tokens,
+    ).token_for("query_current_user_orders") == "order-token"
+    assert RunToolContext(
+        active_agent="after_sales_advisor_agent", max_calls=4, tokens=tokens,
+    ).token_for("query_current_user_orders") == "refund-token"

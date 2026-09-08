@@ -49,6 +49,16 @@ public class CustomerAgentRun implements Serializable {
     private String interruptReason;
     private Integer resumeCount;
     private String handoffReasonCode;
+    private String routeSource;
+    private String routerRuleVersion;
+    private Double routeConfidence;
+    private String sceneScores;
+    private String matchedRuleIds;
+    private String primaryScene;
+    private String activeMaster;
+    private String sceneHistory;
+    private String specialistHistory;
+    private Integer specialistCallCount;
     private LocalDateTime startedTime;
     private LocalDateTime finishedTime;
     private LocalDateTime updateTime;

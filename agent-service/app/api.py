@@ -9,12 +9,17 @@ from opentelemetry import trace
 from langgraph.types import Command
 
 from app.config import get_settings
+from app.task_memory import TaskMemoryRequest, TaskMemoryDiff
+from app.user_profile import ProfileRequest, ProfileDiff
 from app.graph.builder import (
     AllAgentTasksFailedError, RouterInvalidResponseError,
     SupervisorInvalidPlanError, SupervisorInvalidReviewError,
 )
 from app.observability import action_resumes, errors, run_latency
-from app.schemas import AgentRunRequest, AgentRunResponse, AgentRunResumeRequest
+from app.schemas import (
+    AgentRunRequest, AgentRunResponse, AgentRunResumeRequest, MemoryMergeRequest,
+    MemorySummaryResponse, SessionSummaryRequest,
+)
 
 router = APIRouter()
 tracer = trace.get_tracer("smarthub.agent_service")
@@ -30,12 +35,30 @@ def _to_response(result: dict, run_id: str, trace_id: str) -> AgentRunResponse:
         structured = {"type": "ACTION_CONFIRMATION", "actionProposal": action_proposal}
     elif handoff_proposal:
         structured = {"type": "HUMAN_HANDOFF", "handoffProposal": handoff_proposal}
+    product_faq = next((a["faq_result"] for a in result.get("agent_artifacts", [])
+                       if a.get("agent") == "answer_product_faq" and a.get("faq_result")), None)
+    if product_faq:
+        structured = (structured or {"type": "PRODUCT_FAQ"}) | {"productFaq": product_faq}
+        structured["businessResults"] = [{"tool": a["agent"], "result": a["tool_result"]}
+            for a in result.get("agent_artifacts", []) if a.get("type") == "business_result"]
     return AgentRunResponse(
         run_id=result.get("run_id", run_id), reply=reply,
-        intent=result.get("primary_intent", "GENERAL"),
-        active_agent=result.get("active_agent", "general_support_agent"),
+        intent=result.get("primary_scene", result.get("primary_intent", "PRE_SALES")),
+        scene=result.get("primary_scene", "PRE_SALES"),
+        scenes=result.get("scenes", [result.get("primary_scene", "PRE_SALES")]),
+        active_agent=result.get("active_agent", "customer_service_master_agent"),
         business_refs=result.get("business_refs", []), structured_content=structured,
-        trace_id=result.get("trace_id", trace_id), graph_version="v4",
+        trace_id=result.get("trace_id", trace_id), graph_version="v5",
+        route_source=result.get("route_source", "LLM"),
+        router_rule_version=result.get("router_rule_version"),
+        route_confidence=result.get("route_confidence", 0.0),
+        scene_scores=result.get("scene_scores", {}),
+        matched_rule_ids=result.get("matched_rule_ids", []),
+        primary_scene=result.get("primary_scene", "PRE_SALES"),
+        active_master=result.get("active_master", result.get("active_agent", "customer_service_master_agent")),
+        scene_history=result.get("scene_history", []),
+        specialist_history=result.get("specialist_history", []),
+        specialist_call_count=result.get("specialist_call_count", 0),
         run_status=run_status, resolution_type=result.get("resolution_type", "RESPONSE_ONLY"),
         action_proposal=action_proposal, handoff_proposal=handoff_proposal,
         route_history=result.get("route_history", []), handoff_count=result.get("handoff_count", 0),
@@ -45,7 +68,8 @@ def _to_response(result: dict, run_id: str, trace_id: str) -> AgentRunResponse:
         execution_mode=result.get("execution_mode", "SIMPLE"), plan_id=result.get("plan_id"),
         supervisor_iterations=result.get("supervisor_iterations", 0),
         parallel_task_count=result.get("parallel_task_count", 0),
-        task_outcomes=result.get("task_outcomes", []), orchestrator=result.get("orchestrator", "router"),
+        task_outcomes=result.get("task_outcomes", []),
+        orchestrator=result.get("orchestrator", "customer_service_master"),
     )
 
 
@@ -53,6 +77,65 @@ def _require_service_key(value: str | None) -> None:
     expected = get_settings().agent_service_api_key
     if not expected or value is None or not hmac.compare_digest(value, expected):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid service key")
+
+
+@router.post("/v1/customer-service/memory/summarize-session", response_model=MemorySummaryResponse)
+async def summarize_session(
+    payload: SessionSummaryRequest,
+    request: Request,
+    x_agent_service_key: str | None = Header(default=None),
+) -> MemorySummaryResponse:
+    _require_service_key(x_agent_service_key)
+    summary = await request.app.state.runtime.memory.summarize_session(
+        [item.model_dump(mode="python") for item in payload.messages]
+    )
+    return MemorySummaryResponse(summary=summary)
+
+
+@router.post("/v1/customer-service/memory/merge-summary", response_model=MemorySummaryResponse)
+async def merge_summary(
+    payload: MemoryMergeRequest,
+    request: Request,
+    x_agent_service_key: str | None = Header(default=None),
+) -> MemorySummaryResponse:
+    _require_service_key(x_agent_service_key)
+    summary = await request.app.state.runtime.memory.merge_long_term(
+        payload.previous_summary, payload.session_summary
+    )
+    return MemorySummaryResponse(summary=summary)
+
+
+@router.post("/v1/customer-service/memory/task-diff", response_model=TaskMemoryDiff, response_model_exclude_none=True)
+async def task_memory_diff(
+    payload: TaskMemoryRequest,
+    request: Request,
+    x_agent_service_key: str | None = Header(default=None),
+) -> TaskMemoryDiff:
+    _require_service_key(x_agent_service_key)
+    async with request.app.state.memory_semaphore:
+        try:
+            return await asyncio.wait_for(request.app.state.task_memory.extract(payload), timeout=45)
+        except (ValueError, TimeoutError) as error:
+            raise HTTPException(status_code=503, detail="task memory extraction failed") from error
+
+
+@router.post("/v1/customer-service/memory/profile-diff", response_model=ProfileDiff)
+async def user_profile_diff(
+    payload: ProfileRequest,
+    request: Request,
+    x_agent_service_key: str | None = Header(default=None),
+) -> ProfileDiff:
+    _require_service_key(x_agent_service_key)
+
+    async def extract():
+        async with request.app.state.profile_semaphore:
+            return await request.app.state.user_profile.extract(payload)
+
+    try:
+        # Include semaphore queue time so abandoned requests cannot wait indefinitely.
+        return await asyncio.wait_for(extract(), timeout=45)
+    except (ValueError, TimeoutError) as error:
+        raise HTTPException(status_code=503, detail="user profile extraction failed") from error
 
 
 @router.get("/health/live")
@@ -68,17 +151,24 @@ async def readiness(request: Request) -> dict[str, str]:
         failures.append("AGENT_SERVICE_API_KEY")
     if not settings.dashscope_api_key:
         failures.append("DASHSCOPE_API_KEY")
-    if not settings.tavily_api_key:
-        failures.append("TAVILY_API_KEY")
     try:
         await request.app.state.runtime.redis.ping()
     except Exception:
         failures.append("redis")
     try:
-        if not await asyncio.to_thread(request.app.state.runtime.retriever.collection_exists):
+        if not await request.app.state.runtime.retriever.run_sync(
+            request.app.state.runtime.retriever.collection_exists
+        ):
             failures.append("milvus_collection")
     except Exception:
         failures.append("milvus")
+    try:
+        if not await request.app.state.runtime.retriever.run_sync(
+            request.app.state.merchant_index.exists
+        ):
+            failures.append("merchant_faq_collection")
+    except Exception:
+        failures.append("merchant_faq_collection")
     if failures:
         raise HTTPException(status_code=503, detail={"status": "DOWN", "failures": failures})
     return {"status": "UP"}
@@ -97,8 +187,8 @@ async def run_customer_service(
 
     runtime = request.app.state.runtime
     settings = get_settings()
-    result_key = f"agent:v4:run:{payload.request_id}:result"
-    lock_key = f"agent:v4:run:{payload.request_id}:lock"
+    result_key = f"agent:v5:run:{payload.request_id}:result"
+    lock_key = f"agent:v5:run:{payload.request_id}:lock"
     cached = await runtime.redis.get(result_key)
     if cached:
         return AgentRunResponse.model_validate_json(cached)
@@ -124,15 +214,23 @@ async def run_customer_service(
             "transaction_agent_token": payload.tool_access_token,
             "discovery_agent_token": payload.tool_access_token,
         }
+        transaction_token = scoped_tokens.get("transaction_agent_token")
+        discovery_token = scoped_tokens.get("discovery_agent_token")
         tool_tokens = {
-            "transaction_agent": scoped_tokens["transaction_agent_token"],
-            "discovery_agent": scoped_tokens["discovery_agent_token"],
+            "faq_knowledge": scoped_tokens.get("faq_knowledge_token"),
+            "transaction_agent": transaction_token,
+            "discovery_agent": discovery_token,
+            "shop_agent": scoped_tokens.get("shop_agent_token") or discovery_token or transaction_token,
+            "voucher_agent": scoped_tokens.get("voucher_agent_token") or transaction_token,
+            "content_agent": scoped_tokens.get("content_agent_token") or discovery_token,
+            "order_agent": scoped_tokens.get("order_agent_token") or transaction_token,
+            "refund_agent": scoped_tokens.get("refund_agent_token") or transaction_token,
         }
         checkpoint_thread_id = f"{payload.thread_id}:{run_id}"
         graph_config = {
             "configurable": {
                 "thread_id": checkpoint_thread_id,
-                "checkpoint_ns": "customer_service_v4",
+                "checkpoint_ns": "customer_service_v5",
             },
             "recursion_limit": settings.graph_recursion_limit,
         }
@@ -172,9 +270,9 @@ async def run_customer_service(
                 response.model_dump_json(by_alias=True),
                 ex=settings.result_ttl_seconds,
             )
-            await runtime.redis.sadd(f"agent:v4:thread:{payload.thread_id}:runs", run_id)
+            await runtime.redis.sadd(f"agent:v5:thread:{payload.thread_id}:runs", run_id)
             await runtime.redis.expire(
-                f"agent:v4:thread:{payload.thread_id}:runs", settings.checkpoint_ttl_seconds
+                f"agent:v5:thread:{payload.thread_id}:runs", settings.checkpoint_ttl_seconds
             )
             latency_attributes = {
                 "outcome": "success",
@@ -216,25 +314,35 @@ async def resume_customer_service(
         raise HTTPException(status_code=422, detail="idempotency key must equal actionEventId")
     runtime = request.app.state.runtime
     settings = get_settings()
-    resume_key = f"agent:v4:run:{payload.request_id}:resume:{payload.action_event_id}"
-    result_key = f"agent:v4:run:{payload.request_id}:result"
-    lock_key = f"agent:v4:run:{payload.request_id}:resume-lock"
+    resume_key = f"agent:v5:run:{payload.request_id}:resume:{payload.action_event_id}"
+    result_key = f"agent:v5:run:{payload.request_id}:result"
+    lock_key = f"agent:v5:run:{payload.request_id}:resume-lock"
     cached = await runtime.redis.get(resume_key)
     if cached:
         return AgentRunResponse.model_validate_json(cached)
     acquired = await runtime.redis.set(lock_key, "1", ex=35, nx=True)
     if not acquired:
         raise HTTPException(status_code=409, detail="RUN_IN_PROGRESS")
-    graph_config = {
-        "configurable": {
-            "thread_id": f"{payload.thread_id}:{run_id}",
-            "checkpoint_ns": "customer_service_v4",
-        },
-        "recursion_limit": settings.graph_recursion_limit,
-    }
     try:
-        snapshot = await runtime.graph.aget_state(graph_config)
-        values = getattr(snapshot, "values", {}) or {}
+        snapshot = None
+        graph_config = None
+        values = {}
+        # A v4 confirmation may still be outstanding during a rolling replacement.
+        for namespace in ("customer_service_v5", "customer_service_v4"):
+            candidate_config = {
+                "configurable": {
+                    "thread_id": f"{payload.thread_id}:{run_id}",
+                    "checkpoint_ns": namespace,
+                },
+                "recursion_limit": settings.graph_recursion_limit,
+            }
+            candidate = await runtime.graph.aget_state(candidate_config)
+            candidate_values = getattr(candidate, "values", {}) or {}
+            if candidate_values.get("request_id") == payload.request_id:
+                snapshot, graph_config, values = candidate, candidate_config, candidate_values
+                break
+        if snapshot is None or graph_config is None:
+            raise HTTPException(status_code=404, detail="ACTION_CHECKPOINT_NOT_FOUND")
         if values.get("request_id") != payload.request_id:
             raise HTTPException(status_code=404, detail="ACTION_CHECKPOINT_NOT_FOUND")
         if not getattr(snapshot, "next", ()):
@@ -281,8 +389,9 @@ async def delete_thread(
     _require_service_key(x_agent_service_key)
     runtime = request.app.state.runtime
     await runtime.checkpointer.adelete_thread(thread_id)
-    run_set_key = f"agent:v4:thread:{thread_id}:runs"
-    for run_id in await runtime.redis.smembers(run_set_key):
-        await runtime.checkpointer.adelete_thread(f"{thread_id}:{run_id}")
-    await runtime.redis.delete(run_set_key)
+    for graph_version in ("v5", "v4"):
+        run_set_key = f"agent:{graph_version}:thread:{thread_id}:runs"
+        for run_id in await runtime.redis.smembers(run_set_key):
+            await runtime.checkpointer.adelete_thread(f"{thread_id}:{run_id}")
+        await runtime.redis.delete(run_set_key)
     return Response(status_code=204)

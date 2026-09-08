@@ -37,6 +37,8 @@ public class CustomerHandoffServiceImpl implements ICustomerHandoffService {
     private final CustomerChatBizRefMapper bizRefMapper;
     private final IConversationMemoryService conversationMemoryService;
     private final RedisIdWorker redisIdWorker;
+    @javax.annotation.Resource
+    private com.hmdp.service.memory.WorkingMemoryService workingMemory;
 
     public CustomerHandoffServiceImpl(CustomerHandoffMapper handoffMapper,
                                       CustomerImChatMapper imChatMapper,
@@ -201,6 +203,7 @@ public class CustomerHandoffServiceImpl implements ICustomerHandoffService {
                 .setContent(normalizedContent)
                 .setCreateTime(now);
         messageMapper.insert(message);
+        if (workingMemory != null) workingMemory.appendAfterCommit(message);
 
         humanChat.setLastActiveTime(now);
         chatMapper.updateById(humanChat);

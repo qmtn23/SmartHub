@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public interface IConversationMemoryService {
 
     /**
-     * 结束短会话、生成本轮摘要并更新所属长会话记忆。
+     * 结束短会话并持久化后台记忆更新任务，不等待模型。
      */
     void finalizeChat(CustomerImChat imChat, CustomerChat chat, LocalDateTime endTime);
 

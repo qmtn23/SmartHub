@@ -4,6 +4,7 @@ import com.hmdp.dto.tool.BusinessReferenceDTO;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class AgentTaskOutcomeDTO {
@@ -18,4 +19,5 @@ public class AgentTaskOutcomeDTO {
     private Integer toolCallCount;
     private Integer promptTokens;
     private Integer completionTokens;
+    private Map<String, Object> metadata;
 }

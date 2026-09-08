@@ -66,6 +66,8 @@ class CustomerChatServiceImplTest {
     private IConversationMemoryService conversationMemoryService;
     @Mock
     private RedisIdWorker redisIdWorker;
+    @Mock
+    private com.hmdp.service.ProductConsultationService productConsultationService;
 
     private CustomerChatServiceImpl service;
 
@@ -76,6 +78,7 @@ class CustomerChatServiceImplTest {
                 customerAgentClient, agentRunService, actionService, actionCoordinator,
                 handoffService, tokenService,
                 conversationMemoryService, redisIdWorker, new ObjectMapper());
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "productConsultationService", productConsultationService);
     }
 
     @Test
@@ -113,6 +116,8 @@ class CustomerChatServiceImplTest {
                 .setUserId(userId)
                 .setStatus(CHAT_STATUS_ACTIVE)
                 .setActiveAgent("general_support_agent")
+                .setActiveScene("PRE_SALES")
+                .setActiveMaster("pre_sales_master_agent")
                 .setStartTime(now)
                 .setLastActiveTime(now);
 
@@ -129,9 +134,12 @@ class CustomerChatServiceImplTest {
         when(tokenService.issue(any(), any())).thenReturn("tool-token");
         AgentRunResponseDTO agentResponse = new AgentRunResponseDTO();
         agentResponse.setReply("已为您查询");
-        agentResponse.setIntent("GENERAL");
-        agentResponse.setActiveAgent("transaction_agent");
-        agentResponse.setGraphVersion("v4");
+        agentResponse.setIntent("AFTER_SALES");
+        agentResponse.setScene("AFTER_SALES");
+        agentResponse.setPrimaryScene("AFTER_SALES");
+        agentResponse.setActiveAgent("after_sales_master_agent");
+        agentResponse.setActiveMaster("after_sales_master_agent");
+        agentResponse.setGraphVersion("v5");
         agentResponse.setTraceId("trace-1");
         when(customerAgentClient.invoke(any())).thenReturn(agentResponse);
 
@@ -151,16 +159,23 @@ class CustomerChatServiceImplTest {
                 String.valueOf(chatId).equals(agentRequest.getThreadId())
                         && "用户此前咨询过该订单".equals(agentRequest.getLongTermSummary())
                         && "general_support_agent".equals(agentRequest.getPreviousActiveAgent())
-                        && "v4".equals(agentRequest.getGraphVersion())
+                        && "PRE_SALES".equals(agentRequest.getPreviousActiveScene())
+                        && "pre_sales_master_agent".equals(agentRequest.getPreviousActiveMaster())
+                        && "v5".equals(agentRequest.getGraphVersion())
                         && agentRequest.getToolAccessTokens() != null
-                        && "tool-token".equals(agentRequest.getToolAccessTokens().getTransactionAgentToken())
-                        && "tool-token".equals(agentRequest.getToolAccessTokens().getDiscoveryAgentToken())));
+                        && "tool-token".equals(agentRequest.getToolAccessTokens().getShopAgentToken())
+                        && "tool-token".equals(agentRequest.getToolAccessTokens().getRefundAgentToken())));
         verify(agentRunService).completeSuccess(org.mockito.Mockito.eq("run-1"),
                 org.mockito.Mockito.eq(agentResponse), any(CustomerChatMessage.class),
                 org.mockito.Mockito.argThat(updatedChat ->
-                        "transaction_agent".equals(updatedChat.getActiveAgent())));
-        verify(tokenService).issue(any(), org.mockito.Mockito.eq(com.hmdp.security.AgentToolScopes.transactionScopes()));
-        verify(tokenService).issue(any(), org.mockito.Mockito.eq(com.hmdp.security.AgentToolScopes.discoveryScopes()));
+                        "after_sales_master_agent".equals(updatedChat.getActiveAgent())
+                                && "AFTER_SALES".equals(updatedChat.getActiveScene())
+                                && "after_sales_master_agent".equals(updatedChat.getActiveMaster())));
+        verify(tokenService).issue(any(), org.mockito.Mockito.eq(com.hmdp.security.AgentToolScopes.contentAgentScopes()));
+        verify(tokenService).issue(any(), org.mockito.Mockito.eq(com.hmdp.security.AgentToolScopes.shopAgentScopes()));
+        verify(tokenService).issue(any(), org.mockito.Mockito.eq(com.hmdp.security.AgentToolScopes.voucherAgentScopes()));
+        verify(tokenService).issue(any(), org.mockito.Mockito.eq(com.hmdp.security.AgentToolScopes.orderAgentScopes()));
+        verify(tokenService).issue(any(), org.mockito.Mockito.eq(com.hmdp.security.AgentToolScopes.refundAgentScopes()));
         verify(agentRunService).createPendingWithUserMessage(any(CustomerChatMessage.class));
     }
 
@@ -225,7 +240,7 @@ class CustomerChatServiceImplTest {
                 action, "event-1", "EXECUTION_SUCCEEDED", outcome, false);
         AgentRunResponseDTO resumed = new AgentRunResponseDTO();
         resumed.setReply("订单已取消。");
-        resumed.setGraphVersion("v4");
+        resumed.setGraphVersion("v5");
         resumed.setRunStatus("COMPLETED");
         resumed.setActiveAgent("transaction_agent");
 

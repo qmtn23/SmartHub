@@ -1,9 +1,13 @@
 import hashlib
+import re
 from pathlib import Path
 
 from langchain_openai import OpenAIEmbeddings
 
 from app.config import get_settings
+
+
+INGESTION_VERSION = "markdown-v2"
 
 
 def split_text(text: str, size: int = 500, overlap: int = 80) -> list[str]:
@@ -18,6 +22,39 @@ def split_text(text: str, size: int = 500, overlap: int = 80) -> list[str]:
         if end == len(normalized):
             break
         start = end - overlap
+    return chunks
+
+
+def split_markdown(text: str, size: int = 500, overlap: int = 80) -> list[str]:
+    """Split on Markdown headings first and repeat the heading path in every child chunk."""
+    heading_path: list[str] = []
+    sections: list[tuple[list[str], list[str]]] = []
+    body: list[str] = []
+
+    def flush() -> None:
+        nonlocal body
+        value = "\n".join(body).strip()
+        if value:
+            sections.append((list(heading_path), [value]))
+        body = []
+
+    for line in text.splitlines():
+        match = re.match(r"^(#{1,6})\s+(.+?)\s*$", line)
+        if not match:
+            body.append(line)
+            continue
+        flush()
+        level = len(match.group(1))
+        heading_path = heading_path[: level - 1]
+        heading_path.append(match.group(2).strip())
+    flush()
+
+    chunks: list[str] = []
+    for headings, values in sections:
+        prefix = " > ".join(headings)
+        available = max(80, size - len(prefix) - 1)
+        for child in split_text(values[0], size=available, overlap=min(overlap, available // 2)):
+            chunks.append(f"{prefix}\n{child}" if prefix else child)
     return chunks
 
 
@@ -76,11 +113,11 @@ def ingest() -> None:
 
     for path in files:
         content = path.read_text(encoding="utf-8")
-        checksum = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        checksum = hashlib.sha256(f"{INGESTION_VERSION}\0{content}".encode("utf-8")).hexdigest()
         if existing_by_source.get(path.name) == checksum:
             continue
         client.delete(settings.milvus_collection, filter=f'source == "{path.name}"')
-        chunks = split_text(content)
+        chunks = split_markdown(content)
         vectors = embeddings.embed_documents(chunks)
         rows = [
             {
@@ -89,7 +126,7 @@ def ingest() -> None:
                 "document_id": hashlib.sha256(path.name.encode("utf-8")).hexdigest()[:32],
                 "source": path.name,
                 "category": path.stem,
-                "version": "1",
+                "version": INGESTION_VERSION,
                 "checksum": checksum,
                 "content": chunk,
             }

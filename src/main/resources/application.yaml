@@ -22,17 +22,38 @@ spring:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
 mybatis-plus:
   type-aliases-package: com.hmdp.entity # 别名扫描包
-dashscope:
-  api-key: ${DASHSCOPE_API_KEY:}
-  chat-model: qwen-plus
 customer-service:
   operator-key: ${CUSTOMER_SERVICE_OPERATOR_KEY:}
 agent-service:
   base-url: ${AGENT_SERVICE_BASE_URL:http://127.0.0.1:8000}
   api-key: ${AGENT_SERVICE_API_KEY:}
   tool-jwt-secret: ${AGENT_TOOL_JWT_SECRET:}
+  faq-index-key: ${FAQ_INDEX_SERVICE_KEY:}
   connect-timeout-ms: ${AGENT_SERVICE_CONNECT_TIMEOUT_MS:2000}
   read-timeout-ms: ${AGENT_SERVICE_READ_TIMEOUT_MS:65000}
+customer-memory:
+  enabled: ${CUSTOMER_MEMORY_ENABLED:false}
+  poll-interval-ms: ${CUSTOMER_MEMORY_POLL_INTERVAL_MS:5000}
+  trigger-messages: 12
+  max-delay-seconds: 30
+  batch-size: 30
+  active-ttl-days: 30
+  ended-ttl-days: 7
+  max-tasks: 8
+  max-active-tasks: 5
+  max-attempts: 5
+customer-working-memory:
+  enabled: ${CUSTOMER_WORKING_MEMORY_ENABLED:true}
+  ttl-hours: 24
+  rolling-threshold: 30
+  window-size: 20
+customer-profile:
+  enabled: ${CUSTOMER_PROFILE_ENABLED:false}
+  poll-interval-ms: ${CUSTOMER_PROFILE_POLL_INTERVAL_MS:5000}
+  confirmed-ttl-days: 90
+  batch-events: 3
+  coalesce-seconds: 60
+  max-attempts: 5
 customer-actions:
   cancel-enabled: ${CUSTOMER_ACTION_CANCEL_ENABLED:false}
   refund-enabled: ${CUSTOMER_ACTION_REFUND_ENABLED:false}

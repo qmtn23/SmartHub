@@ -64,17 +64,6 @@
             <artifactId>redisson</artifactId>
             <version>3.13.6</version>
         </dependency>
-        <!--langchain4j-->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j</artifactId>
-            <version>1.12.2</version>
-        </dependency>
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-community-dashscope</artifactId>
-            <version>1.12.2-beta22</version>
-        </dependency>
         <!-- short-lived JWT used by the Python agent service when calling Java tools -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

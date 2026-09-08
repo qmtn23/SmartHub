@@ -81,6 +81,21 @@ services:
     depends_on:
       - milvus-standalone
 
+  merchant-faq-indexer:
+    profiles: ["merchant-faq"]
+    build:
+      context: ./agent-service
+    env_file:
+      - path: ./agent-service/.env
+        required: false
+    environment:
+      MILVUS_URI: http://milvus-standalone:19530
+      TZ: Asia/Shanghai
+    command: ["python", "-m", "app.rag.merchant_worker"]
+    restart: unless-stopped
+    depends_on:
+      - milvus-standalone
+
 volumes:
   agent-redis-data:
   milvus-etcd:

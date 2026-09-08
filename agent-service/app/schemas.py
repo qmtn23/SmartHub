@@ -15,9 +15,10 @@ class ApiModel(BaseModel):
 
 
 AgentName = Literal["general_support_agent", "transaction_agent", "discovery_agent"]
+Scene = Literal["PRE_SALES", "AFTER_SALES", "HUMAN_HANDOFF"]
 Intent = Literal[
     "GENERAL", "PLATFORM_KNOWLEDGE", "AFTER_SALES_POLICY", "ORDER_QUERY",
-    "VOUCHER_QUERY", "SHOP_LOOKUP", "SHOP_RECOMMENDATION", "HOT_CONTENT", "EXTERNAL_INFO",
+    "VOUCHER_QUERY", "SHOP_LOOKUP", "SHOP_RECOMMENDATION", "HOT_CONTENT",
     "ORDER_CANCEL", "REFUND_REQUEST", "HUMAN_HANDOFF",
 ]
 ExecutionMode = Literal["SIMPLE", "COMPLEX"]
@@ -32,8 +33,20 @@ class RecentMessage(ApiModel):
 
 
 class ToolAccessTokens(ApiModel):
-    transaction_agent_token: str = Field(min_length=1)
-    discovery_agent_token: str = Field(min_length=1)
+    faq_knowledge_token: str | None = Field(default=None, min_length=1)
+    transaction_agent_token: str | None = Field(default=None, min_length=1)
+    discovery_agent_token: str | None = Field(default=None, min_length=1)
+    shop_agent_token: str | None = Field(default=None, min_length=1)
+    voucher_agent_token: str | None = Field(default=None, min_length=1)
+    content_agent_token: str | None = Field(default=None, min_length=1)
+    order_agent_token: str | None = Field(default=None, min_length=1)
+    refund_agent_token: str | None = Field(default=None, min_length=1)
+
+    @model_validator(mode="after")
+    def require_at_least_one_token(self) -> "ToolAccessTokens":
+        if not any(self.model_dump(mode="python").values()):
+            raise ValueError("at least one scoped tool token is required")
+        return self
 
 
 class PendingActionContext(ApiModel):
@@ -45,16 +58,20 @@ class PendingActionContext(ApiModel):
 
 
 class AgentRunRequest(ApiModel):
+    consultation_context: dict[str, Any] = Field(default_factory=dict)
     request_id: str
     thread_id: str
     im_chat_id: int
     user_message_id: int
     message: str = Field(min_length=1, max_length=4000)
     long_term_summary: str = "暂无长期会话记忆"
+    user_profile: dict[str, Any] = Field(default_factory=dict)
     recent_messages: list[RecentMessage] = Field(default_factory=list, max_length=20)
-    previous_active_agent: AgentName | None = None
-    # Older wire shapes remain accepted during rolling replacement; this service always runs graph v4.
-    graph_version: Literal["v2", "v3", "v4"] = "v4"
+    previous_active_agent: str | None = None
+    previous_active_scene: Scene | None = None
+    previous_active_master: str | None = None
+    # Older wire shapes remain accepted during rolling replacement; this service always runs graph v5.
+    graph_version: Literal["v2", "v3", "v4", "v5"] = "v5"
     pending_action: PendingActionContext | None = None
     tool_access_tokens: ToolAccessTokens | None = None
     tool_access_token: str | None = Field(default=None, min_length=1)
@@ -85,6 +102,28 @@ class RouteDecision(ApiModel):
     reason_code: Literal["SINGLE_INTENT", "MULTI_INTENT", "FOLLOW_UP", "AMBIGUOUS", "OUT_OF_SCOPE"]
 
 
+class SceneRouteDecision(ApiModel):
+    """Top-level router output. Domain decomposition belongs to the scene master agents."""
+
+    primary_scene: Scene
+    scenes: list[Scene] = Field(min_length=1, max_length=2)
+    confidence: float = Field(ge=0, le=1)
+    clarification_required: bool = False
+    reason_code: Literal[
+        "SINGLE_SCENE", "MULTI_SCENE", "USER_EXPLICIT_HANDOFF", "AMBIGUOUS", "OUT_OF_SCOPE",
+    ]
+
+    @model_validator(mode="after")
+    def validate_scene_combination(self) -> "SceneRouteDecision":
+        unique = list(dict.fromkeys(self.scenes))
+        if self.primary_scene not in unique:
+            raise ValueError("primaryScene must be included in scenes")
+        if "HUMAN_HANDOFF" in unique and unique != ["HUMAN_HANDOFF"]:
+            raise ValueError("HUMAN_HANDOFF must be exclusive")
+        self.scenes = unique
+        return self
+
+
 class ResolutionDecision(ApiModel):
     resolution_type: Literal["RESPONSE_ONLY", "ACTION_PROPOSAL", "HANDOFF_PROPOSAL"]
     action_type: ActionType | None = None
@@ -97,6 +136,24 @@ class ResolutionDecision(ApiModel):
         "ALL_REQUIRED_TOOLS_FAILED_FINAL",
     ] | None = None
     reason_code: str = Field(min_length=1, max_length=64)
+
+
+class MemoryMessage(ApiModel):
+    sender_type: str = Field(min_length=1, max_length=32)
+    content: str = Field(min_length=1, max_length=1000)
+
+
+class SessionSummaryRequest(ApiModel):
+    messages: list[MemoryMessage] = Field(min_length=1, max_length=100)
+
+
+class MemoryMergeRequest(ApiModel):
+    previous_summary: str = Field(default="", max_length=3000)
+    session_summary: str = Field(min_length=1, max_length=1200)
+
+
+class MemorySummaryResponse(ApiModel):
+    summary: str
 
 
 class ActionProposal(ApiModel):
@@ -156,8 +213,8 @@ class SupervisorReview(ApiModel):
 
 class TaskOutcome(ApiModel):
     task_id: str
-    target_agent: AgentName
-    intent: Intent
+    target_agent: str
+    intent: str
     status: Literal["SUCCEEDED", "FAILED", "SKIPPED_DEPENDENCY_FAILED"]
     result: str = ""
     error_code: str | None = None
@@ -166,6 +223,7 @@ class TaskOutcome(ApiModel):
     tool_call_count: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class BusinessReference(ApiModel):
@@ -181,12 +239,25 @@ class Usage(ApiModel):
 class AgentRunResponse(ApiModel):
     run_id: str
     reply: str
-    intent: Intent = "GENERAL"
-    active_agent: AgentName = "general_support_agent"
+    # `intent` is retained as a compatibility alias and now carries the primary scene.
+    intent: str = "PRE_SALES"
+    scene: Scene = "PRE_SALES"
+    scenes: list[Scene] = Field(default_factory=lambda: ["PRE_SALES"])
+    active_agent: str = "customer_service_master_agent"
     business_refs: list[BusinessReference] = Field(default_factory=list)
     structured_content: Any | None = None
     trace_id: str
-    graph_version: Literal["v4"] = "v4"
+    graph_version: Literal["v5"] = "v5"
+    route_source: Literal["RULE", "LLM"] = "LLM"
+    router_rule_version: str | None = None
+    route_confidence: float = 0.0
+    scene_scores: dict[str, float] = Field(default_factory=dict)
+    matched_rule_ids: list[str] = Field(default_factory=list)
+    primary_scene: Scene = "PRE_SALES"
+    active_master: str = "customer_service_master_agent"
+    scene_history: list[dict[str, Any]] = Field(default_factory=list)
+    specialist_history: list[dict[str, Any]] = Field(default_factory=list)
+    specialist_call_count: int = 0
     run_status: RunStatus = "COMPLETED"
     resolution_type: Literal["RESPONSE_ONLY", "ACTION_PROPOSAL", "HANDOFF_PROPOSAL"] = "RESPONSE_ONLY"
     action_proposal: ActionProposal | None = None
@@ -201,7 +272,7 @@ class AgentRunResponse(ApiModel):
     supervisor_iterations: int = 0
     parallel_task_count: int = 0
     task_outcomes: list[TaskOutcome] = Field(default_factory=list)
-    orchestrator: Literal["router", "supervisor"] = "router"
+    orchestrator: str = "customer_service_master"
 
 
 class ActionOutcome(ApiModel):

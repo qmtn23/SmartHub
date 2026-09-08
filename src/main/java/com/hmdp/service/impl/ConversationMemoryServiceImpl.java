@@ -23,6 +23,11 @@ import static com.hmdp.utils.CustomerChatConstants.*;
 @Service
 public class ConversationMemoryServiceImpl implements IConversationMemoryService {
 
+    @javax.annotation.Resource
+    private com.hmdp.service.memory.TaskMemoryStore taskMemories;
+    @javax.annotation.Resource
+    private com.hmdp.config.TaskMemoryProperties memorySettings = new com.hmdp.config.TaskMemoryProperties();
+
     private final CustomerChatMapper chatMapper;
     private final CustomerChatMessageMapper messageMapper;
     private final CustomerImChatMapper imChatMapper;
@@ -44,6 +49,15 @@ public class ConversationMemoryServiceImpl implements IConversationMemoryService
     @Override
     public void finalizeChat(CustomerImChat imChat, CustomerChat chat, LocalDateTime endTime) {
         if (chat == null || !CHAT_STATUS_ACTIVE.equals(chat.getStatus())) {
+            return;
+        }
+
+        if (memorySettings.isEnabled()) {
+            taskMemories.endChat(chat.getUserId(), chat.getImChatId(), chat.getChatId(), endTime);
+            chat.setStatus(CHAT_STATUS_ENDED);
+            chat.setEndTime(endTime);
+            chat.setLastActiveTime(endTime);
+            // No HTTP/model calls here. Run-scoped checkpoints expire independently by TTL.
             return;
         }
 
@@ -76,6 +90,15 @@ public class ConversationMemoryServiceImpl implements IConversationMemoryService
 
     @Override
     public String getLongTermMemory(CustomerImChat imChat) {
+        if (memorySettings.isEnabled() && imChat != null && imChat.getUserId() != null) {
+            try {
+                var snapshot = taskMemories.read(imChat.getUserId());
+                // Empty processed memory must not resurrect a cleared or expired legacy summary.
+                if (snapshot.version() > 0) return snapshot.content().toString();
+            } catch (RuntimeException e) {
+                log.warn("任务记忆读取失败，降级使用原会话摘要: {}", e.getClass().getSimpleName());
+            }
+        }
         if (imChat == null || imChat.getSummary() == null || imChat.getSummary().isBlank()) {
             return NO_LONG_TERM_MEMORY;
         }

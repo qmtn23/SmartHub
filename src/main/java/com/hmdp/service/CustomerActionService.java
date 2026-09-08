@@ -53,6 +53,8 @@ public class CustomerActionService {
     private final boolean cancelEnabled;
     private final boolean refundEnabled;
     private final int confirmationTtlSeconds;
+    @javax.annotation.Resource
+    private com.hmdp.service.memory.WorkingMemoryService workingMemory;
 
     public CustomerActionService(CustomerActionRequestMapper requestMapper,
                                  CustomerActionEventMapper eventMapper,
@@ -170,6 +172,7 @@ public class CustomerActionService {
                                           CustomerActionRequest action,
                                           ConfirmationDecision decision) {
         messageMapper.insert(userMessage);
+        if (workingMemory != null) workingMemory.appendAfterCommit(userMessage);
         if (decision == ConfirmationDecision.DECLINE) {
             int updated = requestMapper.decline(action.getActionRequestId(), userMessage.getUserId());
             CustomerActionRequest current = requestMapper.selectById(action.getActionRequestId());

@@ -1,0 +1,8 @@
+{
+  "version": "shopping-rules-v1",
+  "rules": [
+    {"ruleId":"CHECK_USAGE_DATE","categoryIds":[],"topics":["USAGE_DATE","RESTRICTIONS"],"requiredInput":"usageDate","template":"购买前请将计划使用日期与上述商家限制逐项核对，不能仅凭店铺营业时间判断优惠券可用。"},
+    {"ruleId":"CHECK_RESERVATION","categoryIds":[],"topics":["RESERVATION"],"template":"购买前请按上述预约说明确认可约时段；商品可售不代表目标时段仍有预约名额。"},
+    {"ruleId":"CHECK_PARTY_SIZE","categoryIds":[1,2],"topics":["SUITABILITY","CONTENTS"],"requiredInput":"partySize","template":"请将实际使用人数与上述适用说明、包含内容核对；未明确包含的服务不要默认计入套餐。"}
+  ]
+}

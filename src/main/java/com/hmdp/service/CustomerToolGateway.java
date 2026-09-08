@@ -121,6 +121,34 @@ public class CustomerToolGateway {
         });
     }
 
+    public ToolResult<VoucherToolDTO> queryVoucherByContext(Long voucherId, Long expectedShopId) {
+        return execute("queryVoucherByContext", context -> {
+            requirePositiveId(voucherId, "优惠券ID");
+            requirePositiveId(expectedShopId, "店铺ID");
+            Result result = voucherService.queryVoucherOfShop(expectedShopId);
+            if (result == null || !Boolean.TRUE.equals(result.getSuccess())) {
+                return ToolResult.failure(ToolResultCodes.BUSINESS_REJECTED,
+                        result == null ? "优惠券查询失败" : result.getErrorMsg(), false);
+            }
+            @SuppressWarnings("unchecked")
+            List<Voucher> vouchers = result.getData() instanceof List
+                    ? (List<Voucher>) result.getData() : Collections.emptyList();
+            Voucher voucher = vouchers.stream()
+                    .filter(item -> voucherId.equals(item.getId())
+                            && expectedShopId.equals(item.getShopId()))
+                    .findFirst().orElse(null);
+            if (voucher == null) {
+                return ToolResult.failure(ToolResultCodes.NOT_FOUND,
+                        "当前咨询优惠券不可购买或不属于当前店铺", false);
+            }
+            List<BusinessReferenceDTO> refs = new ArrayList<>();
+            refs.add(ref(BIZ_TYPE_SHOP, expectedShopId));
+            refs.add(ref(BIZ_TYPE_VOUCHER, voucherId));
+            return success(context, "queryVoucherByContext", toVoucherDTO(voucher),
+                    "当前优惠券查询成功", refs);
+        });
+    }
+
     /**
      * 用户身份只能从服务端工具上下文取得，模型不能传入userId。
      */
@@ -268,6 +296,7 @@ public class CustomerToolGateway {
         dto.setPayValueCent(voucher.getPayValue());
         dto.setActualValueCent(voucher.getActualValue());
         dto.setType(voucher.getType());
+        dto.setStatus(voucher.getStatus());
         dto.setStock(voucher.getStock());
         dto.setBeginTime(voucher.getBeginTime());
         dto.setEndTime(voucher.getEndTime());

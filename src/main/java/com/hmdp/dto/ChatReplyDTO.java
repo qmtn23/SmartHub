@@ -9,6 +9,7 @@ public class ChatReplyDTO {
     private Long userMessageId;
     private Long assistantMessageId;
     private String reply;
+    private Object structuredContent;
     private String conversationStatus;
     private String handlerType;
     private String runStatus;

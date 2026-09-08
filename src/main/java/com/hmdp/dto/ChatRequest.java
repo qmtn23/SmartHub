@@ -20,4 +20,5 @@ public class ChatRequest {
     private String clientMessageId;
 
     private String message;
+    private ConsultationContextDTO consultationContext;
 }

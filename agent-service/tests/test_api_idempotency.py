@@ -43,12 +43,18 @@ class FakeGraph:
         assert "tool_access_token" not in graph_input
         assert "tool_access_tokens" not in graph_input
         assert context["tool_access_tokens"] == {
-            "transaction_agent": "transaction-token",
-            "discovery_agent": "discovery-token",
+            "faq_knowledge": None,
+            "transaction_agent": None,
+            "discovery_agent": None,
+            "shop_agent": "shop-token",
+            "voucher_agent": "voucher-token",
+            "content_agent": "content-token",
+            "order_agent": "order-token",
+            "refund_agent": "refund-token",
         }
         assert context["request_id"] == "101"
         assert context["result_cache"] is not None
-        assert config["configurable"]["checkpoint_ns"] == "customer_service_v4"
+        assert config["configurable"]["checkpoint_ns"] == "customer_service_v5"
         return {
             "final_response": "测试回复",
             "primary_intent": "ORDER_QUERY",
@@ -115,10 +121,13 @@ async def test_successful_run_is_cached_by_request_id(monkeypatch):
         "longTermSummary": "暂无",
         "recentMessages": [],
         "previousActiveAgent": "general_support_agent",
-        "graphVersion": "v2",
+        "graphVersion": "v5",
         "toolAccessTokens": {
-            "transactionAgentToken": "transaction-token",
-            "discoveryAgentToken": "discovery-token",
+            "shopAgentToken": "shop-token",
+            "voucherAgentToken": "voucher-token",
+            "contentAgentToken": "content-token",
+            "orderAgentToken": "order-token",
+            "refundAgentToken": "refund-token",
         },
     }
     headers = {"X-Agent-Service-Key": "service-secret", "Idempotency-Key": "101"}
@@ -129,11 +138,11 @@ async def test_successful_run_is_cached_by_request_id(monkeypatch):
     assert first.status_code == 200
     assert second.status_code == 200
     assert first.json()["reply"] == "测试回复"
-    assert first.json()["graphVersion"] == "v4"
+    assert first.json()["graphVersion"] == "v5"
     assert first.json()["activeAgent"] == "transaction_agent"
     assert second.json()["runId"] == first.json()["runId"]
     assert graph.calls == 1
-    assert "agent:v4:run:101:result" in redis.values
+    assert "agent:v5:run:101:result" in redis.values
     get_settings.cache_clear()
 
 

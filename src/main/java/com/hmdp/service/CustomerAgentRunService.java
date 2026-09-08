@@ -31,6 +31,8 @@ public class CustomerAgentRunService {
     private final CustomerChatMessageMapper messageMapper;
     private final CustomerChatMapper chatMapper;
     private final ObjectMapper objectMapper;
+    @javax.annotation.Resource
+    private com.hmdp.service.memory.WorkingMemoryService workingMemory;
 
     public CustomerAgentRunService(CustomerAgentRunMapper runMapper,
                                    CustomerChatMessageMapper messageMapper,
@@ -50,6 +52,7 @@ public class CustomerAgentRunService {
     @Transactional
     public CustomerAgentRun createPendingWithUserMessage(CustomerChatMessage userMessage) {
         messageMapper.insert(userMessage);
+        if (workingMemory != null) workingMemory.appendAfterCommit(userMessage);
         return insertPending(userMessage);
     }
 
@@ -63,7 +66,7 @@ public class CustomerAgentRunService {
                 .setChatId(userMessage.getChatId())
                 .setUserId(userMessage.getUserId())
                 .setStatus(PENDING)
-                .setGraphVersion("v4")
+                .setGraphVersion("v5")
                 .setRetryable(false)
                 .setAttemptCount(0)
                 .setUpdateTime(now);
@@ -94,6 +97,7 @@ public class CustomerAgentRunService {
                                  CustomerChatMessage assistantMessage, CustomerChat chat,
                                  String actionRequestId, String actionType) {
         messageMapper.insert(assistantMessage);
+        if (workingMemory != null) workingMemory.appendAfterCommit(assistantMessage);
         chatMapper.updateById(chat);
         CustomerAgentRun update = auditUpdate(runId, response)
                 .setStatus(AWAITING_CONFIRMATION)
@@ -111,6 +115,7 @@ public class CustomerAgentRunService {
     public void completeSuccess(String runId, AgentRunResponseDTO response,
                                 CustomerChatMessage assistantMessage, CustomerChat chat) {
         messageMapper.insert(assistantMessage);
+        if (workingMemory != null) workingMemory.appendAfterCommit(assistantMessage);
         chatMapper.updateById(chat);
         CustomerAgentRun update = auditUpdate(runId, response)
                 .setStatus(SUCCEEDED)
@@ -125,6 +130,7 @@ public class CustomerAgentRunService {
                                 CustomerChatMessage assistantMessage, CustomerChat chat,
                                 String actionStatus) {
         messageMapper.insert(assistantMessage);
+        if (workingMemory != null) workingMemory.appendAfterCommit(assistantMessage);
         chatMapper.updateById(chat);
         CustomerAgentRun update = auditUpdate(runId, response)
                 .setStatus(SUCCEEDED).setRetryable(false).setActionStatus(actionStatus)
@@ -136,7 +142,7 @@ public class CustomerAgentRunService {
         return new CustomerAgentRun()
                 .setRunId(runId)
                 .setTraceId(response.getTraceId())
-                .setGraphVersion(defaultString(response.getGraphVersion(), "v4"))
+                .setGraphVersion(defaultString(response.getGraphVersion(), "v5"))
                 .setEntryAgent(entryAgent(response)).setFinalAgent(response.getActiveAgent())
                 .setRouteHistory(toJson(response.getRouteHistory()))
                 .setHandoffCount(defaultInt(response.getHandoffCount()))
@@ -152,7 +158,17 @@ public class CustomerAgentRunService {
                 .setOrchestrator(defaultString(response.getOrchestrator(), "router"))
                 .setResolutionType(defaultString(response.getResolutionType(), "RESPONSE_ONLY"))
                 .setHandoffReasonCode(response.getHandoffProposal() == null
-                        ? null : response.getHandoffProposal().getReasonCode());
+                        ? null : response.getHandoffProposal().getReasonCode())
+                .setRouteSource(defaultString(response.getRouteSource(), "LLM"))
+                .setRouterRuleVersion(response.getRouterRuleVersion())
+                .setRouteConfidence(response.getRouteConfidence())
+                .setSceneScores(toJson(response.getSceneScores()))
+                .setMatchedRuleIds(toJson(response.getMatchedRuleIds()))
+                .setPrimaryScene(defaultString(response.getPrimaryScene(), response.getScene()))
+                .setActiveMaster(defaultString(response.getActiveMaster(), response.getActiveAgent()))
+                .setSceneHistory(toJson(response.getSceneHistory()))
+                .setSpecialistHistory(toJson(response.getSpecialistHistory()))
+                .setSpecialistCallCount(defaultInt(response.getSpecialistCallCount()));
     }
 
     private String entryAgent(AgentRunResponseDTO response) {

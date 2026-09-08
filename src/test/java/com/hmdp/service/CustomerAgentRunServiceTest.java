@@ -16,6 +16,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,7 +51,7 @@ class CustomerAgentRunServiceTest {
         assertEquals("3001", run.getRequestId());
         assertEquals(CustomerAgentRunService.PENDING, run.getStatus());
         assertFalse(run.getRetryable());
-        assertEquals("v4", run.getGraphVersion());
+        assertEquals("v5", run.getGraphVersion());
         verify(runMapper).insert(run);
     }
 
@@ -83,6 +85,16 @@ class CustomerAgentRunServiceTest {
         outcome.setResult("查询成功");
         response.setTaskOutcomes(java.util.Collections.singletonList(outcome));
         response.setOrchestrator("supervisor");
+        response.setRouteSource("RULE");
+        response.setRouterRuleVersion("v5-1");
+        response.setRouteConfidence(0.95D);
+        response.setSceneScores(Map.of("AFTER_SALES", 1.0D));
+        response.setMatchedRuleIds(java.util.Collections.singletonList("after-refund"));
+        response.setPrimaryScene("AFTER_SALES");
+        response.setActiveMaster("after_sales_master_agent");
+        response.setSceneHistory(java.util.Collections.singletonList(Map.of("scene", "AFTER_SALES")));
+        response.setSpecialistHistory(java.util.Collections.singletonList(Map.of("agent", "refund_agent")));
+        response.setSpecialistCallCount(1);
 
         service.completeSuccess("run-1", response, reply, chat);
 
@@ -100,6 +112,13 @@ class CustomerAgentRunServiceTest {
         assertEquals(1, captor.getValue().getSupervisorIterations());
         assertEquals(2, captor.getValue().getParallelTaskCount());
         assertEquals("supervisor", captor.getValue().getOrchestrator());
+        assertEquals("RULE", captor.getValue().getRouteSource());
+        assertEquals("v5-1", captor.getValue().getRouterRuleVersion());
+        assertEquals(0.95D, captor.getValue().getRouteConfidence());
+        assertEquals("AFTER_SALES", captor.getValue().getPrimaryScene());
+        assertEquals("after_sales_master_agent", captor.getValue().getActiveMaster());
+        assertEquals(1, captor.getValue().getSpecialistCallCount());
+        assertTrue(captor.getValue().getMatchedRuleIds().contains("after-refund"));
         assertTrue(captor.getValue().getTaskOutcomes().contains("orders"));
         assertTrue(captor.getValue().getRouteHistory().contains("transaction_agent"));
     }

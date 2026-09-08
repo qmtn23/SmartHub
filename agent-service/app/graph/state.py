@@ -22,9 +22,13 @@ class CustomerServiceState(TypedDict, total=False):
     im_chat_id: int
     user_message_id: int
     message: str
+    consultation_context: dict[str, Any]
     long_term_summary: str
+    user_profile: dict[str, Any]
     recent_messages: list[dict[str, Any]]
     previous_active_agent: str | None
+    previous_active_scene: str | None
+    previous_active_master: str | None
     pending_action: dict[str, Any] | None
     requested_graph_version: str
     graph_version: str
@@ -34,6 +38,17 @@ class CustomerServiceState(TypedDict, total=False):
 
     active_agent: str
     primary_intent: str
+    primary_scene: str
+    scenes: list[str]
+    route_source: str
+    router_rule_version: str | None
+    route_confidence: float
+    scene_scores: dict[str, float]
+    matched_rule_ids: list[str]
+    active_master: str
+    scene_history: Annotated[list[dict[str, Any]], operator.add]
+    specialist_history: Annotated[list[dict[str, Any]], operator.add]
+    specialist_call_count: int
     execution_mode: str
     orchestrator: str
     route_decision: dict[str, Any]

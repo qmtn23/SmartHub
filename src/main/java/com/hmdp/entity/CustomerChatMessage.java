@@ -28,6 +28,7 @@ public class CustomerChatMessage implements Serializable {
     private String messageType;
     private String content;
     private String structuredContent;
+    private String consultationContext;
     private String clientMessageId;
     private Long replyToMessageId;
     private LocalDateTime createTime;

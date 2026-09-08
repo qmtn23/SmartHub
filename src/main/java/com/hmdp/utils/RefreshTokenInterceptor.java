@@ -24,6 +24,8 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        if (request.getAttribute(com.hmdp.security.AgentToolAuthFilter.PRINCIPAL_ATTRIBUTE)
+                instanceof com.hmdp.security.AgentToolPrincipal) return true;
         // 1.获取请求头中的token
         String token = request.getHeader("authorization");
         if (StrUtil.isBlank(token)) {

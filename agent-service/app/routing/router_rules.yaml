@@ -1,0 +1,70 @@
+version: v5-1
+accept_threshold: 0.85
+minimum_margin: 0.20
+multi_scene_markers:
+  - 同时
+  - 另外
+  - 顺便
+  - 再帮我
+  - 还要
+  - 也帮我
+follow_up_phrases:
+  - 那这个呢
+  - 那这个
+  - 这个呢
+  - 继续查
+  - 接着说
+  - 然后呢
+  - 那呢
+llm_fallback_phrases:
+  - 忽略系统
+  - 忽略之前
+  - 系统提示词
+  - 调用订单工具
+  - 绕过权限
+  - prompt injection
+scenes:
+  HUMAN_HANDOFF:
+    priority: 100
+    phrases:
+      - {id: human-transfer, text: 转人工, weight: 1.0}
+      - {id: human-service, text: 人工客服, weight: 1.0}
+      - {id: human-real, text: 真人客服, weight: 1.0}
+      - {id: human-find, text: 找人工, weight: 1.0}
+    negative_phrases:
+      - 不用转人工
+      - 不需要人工
+      - 不找人工
+      - 不要人工客服
+  AFTER_SALES:
+    priority: 80
+    phrases:
+      - {id: after-refund, text: 退款, weight: 1.0}
+      - {id: after-cancel-order, text: 取消订单, weight: 1.0}
+      - {id: after-order-error, text: 订单异常, weight: 0.9}
+      - {id: after-not-received, text: 没到账, weight: 0.9}
+      - {id: after-complaint, text: 投诉, weight: 0.85}
+      - {id: after-service, text: 售后, weight: 0.85}
+      - {id: after-dispute, text: 纠纷, weight: 0.85}
+      - {id: after-order, text: 我的订单, weight: 0.85}
+      - {id: after-order-generic, text: 订单, weight: 0.85}
+      - {id: after-writeoff, text: 核销, weight: 0.75}
+    negative_phrases:
+      - 不想退款
+      - 不用退款
+      - 不是退款
+      - 不取消订单
+  PRE_SALES:
+    priority: 60
+    phrases:
+      - {id: pre-recommend, text: 推荐, weight: 0.9}
+      - {id: pre-nearby, text: 附近, weight: 0.7}
+      - {id: pre-which-best, text: 哪家好, weight: 0.85}
+      - {id: pre-voucher, text: 优惠券, weight: 0.65}
+      - {id: pre-opening-hours, text: 营业时间, weight: 0.85}
+      - {id: pre-hot, text: 热门, weight: 0.75}
+      - {id: pre-shop, text: 店铺, weight: 0.65}
+      - {id: pre-login, text: 登录, weight: 0.85}
+      - {id: pre-register, text: 注册, weight: 0.85}
+      - {id: pre-platform, text: 平台规则, weight: 0.85}
+    negative_phrases: []

@@ -14,6 +14,7 @@ public class VoucherToolDTO {
     private Long payValueCent;
     private Long actualValueCent;
     private Integer type;
+    private Integer status;
     private Integer stock;
     private LocalDateTime beginTime;
     private LocalDateTime endTime;

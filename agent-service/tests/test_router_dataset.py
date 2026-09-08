@@ -27,6 +27,6 @@ def test_router_evaluation_dataset_has_required_coverage():
     assert all(1 < len(case["expectedSupervisorTargets"]) <= 3 for case in complex_cases)
     assert {case["expectedIntent"] for case in cases} == {
         "GENERAL", "PLATFORM_KNOWLEDGE", "AFTER_SALES_POLICY", "ORDER_QUERY", "VOUCHER_QUERY",
-        "SHOP_LOOKUP", "SHOP_RECOMMENDATION", "HOT_CONTENT", "EXTERNAL_INFO",
+        "SHOP_LOOKUP", "SHOP_RECOMMENDATION", "HOT_CONTENT",
         "ORDER_CANCEL", "REFUND_REQUEST", "HUMAN_HANDOFF",
     }

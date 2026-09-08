@@ -1134,7 +1134,7 @@ wheels = [
 
 [[package]]
 name = "smarthub-agent-service"
-version = "0.4.0"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
@@ -1147,6 +1147,7 @@ dependencies = [
     { name = "opentelemetry-sdk" },
     { name = "pydantic-settings" },
     { name = "pymilvus" },
+    { name = "pyyaml" },
     { name = "redis" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -1170,6 +1171,7 @@ requires-dist = [
     { name = "opentelemetry-sdk", specifier = ">=1.30,<2" },
     { name = "pydantic-settings", specifier = ">=2.7,<3" },
     { name = "pymilvus", specifier = ">=2.5,<3" },
+    { name = "pyyaml", specifier = ">=6,<7" },
     { name = "redis", specifier = ">=5,<7" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34,<1" },
 ]

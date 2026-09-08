@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS `tb_customer_chat` (
   `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '所属用户ID',
   `intent` varchar(64) DEFAULT NULL COMMENT '本轮意图',
   `active_agent` varchar(32) DEFAULT NULL COMMENT '最近成功完成回复的Agent',
+  `active_scene` varchar(24) DEFAULT NULL COMMENT '最近成功完成回复的一级场景',
+  `active_master` varchar(32) DEFAULT NULL COMMENT '最近成功完成回复的Master Agent',
   `summary` text COMMENT '短会话摘要',
   `status` varchar(16) NOT NULL DEFAULT 'ACTIVE' COMMENT '短会话状态',
   `start_time` datetime NOT NULL COMMENT '开始时间',

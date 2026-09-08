@@ -12,3 +12,4 @@ class AppRuntime:
     checkpointer: object
     graph: CompiledStateGraph
     retriever: KnowledgeRetriever
+    memory: object

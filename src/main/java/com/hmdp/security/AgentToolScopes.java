@@ -28,4 +28,24 @@ public final class AgentToolScopes {
         return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                 SHOP_READ, BLOG_READ)));
     }
+
+    public static Set<String> shopAgentScopes() {
+        return Collections.singleton(SHOP_READ);
+    }
+
+    public static Set<String> voucherAgentScopes() {
+        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SHOP_READ, VOUCHER_READ)));
+    }
+
+    public static Set<String> contentAgentScopes() {
+        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SHOP_READ, BLOG_READ)));
+    }
+
+    public static Set<String> orderAgentScopes() {
+        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(ORDER_SELF_READ, SHOP_READ)));
+    }
+
+    public static Set<String> refundAgentScopes() {
+        return Collections.singleton(ORDER_SELF_READ);
+    }
 }
