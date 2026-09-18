@@ -86,6 +86,7 @@ class ProductFaqAgent:
         shop_tool: BaseTool | None,
         platform_knowledge_tool: BaseTool | None,
         settings,
+        middleware=None,
     ):
         self.workflow = workflow
         self.voucher_tool = voucher_tool
@@ -275,6 +276,7 @@ class ProductFaqAgent:
             ],
             system_prompt=FAQ_AGENT_PROMPT,
             name="product_faq_agent",
+            middleware=middleware or [],
         )
 
     async def ainvoke(self, *, task_goal: str, context: dict[str, Any], user_profile: dict[str, Any] | None = None) -> dict[str, Any]:

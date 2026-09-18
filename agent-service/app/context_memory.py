@@ -48,12 +48,13 @@ def relevant_memory(summary: str, goal: str, *, domain: str | None = None, byte_
 _PROFILE_FIELDS = (
     "dietaryPreference", "budgetPreference", "areaPreference", "cuisinePreference",
     "tastePreference", "servicePreference", "environmentPreference", "communicationPreference",
+    "languagePreference", "codingPreference",
 )
 _PROFILE_DOMAINS = {
     "FAQ": ("dietaryPreference", "tastePreference", "servicePreference", "budgetPreference"),
-    "AFTER_SALES": ("communicationPreference",),
-    "COMPLAINT": ("communicationPreference",),
-    "REPLY": ("communicationPreference",),
+    "AFTER_SALES": ("communicationPreference", "languagePreference"),
+    "COMPLAINT": ("communicationPreference", "languagePreference"),
+    "REPLY": ("communicationPreference", "languagePreference"),
 }
 
 
@@ -65,6 +66,18 @@ def select_profile(profile: dict | None, *, domain: str | None = None, byte_budg
     fields = profile.get("fields", {})
     if not isinstance(fields, dict):
         return {"schemaVersion": 1, "fields": selected}
+    pending = []
+    pending_budget = min(3000, byte_budget // 2)
+    for item in reversed(profile.get("pendingStatements", []) if isinstance(profile.get("pendingStatements"), list) else []):
+        if not isinstance(item, dict) or not isinstance(item.get("content"), str) or len(item["content"]) > 1000:
+            continue
+        cost = len(json.dumps(item, ensure_ascii=False).encode("utf-8")) + 16
+        if cost <= pending_budget:
+            pending.insert(0, item)
+            pending_budget -= cost
+            byte_budget -= cost
+        if len(pending) == 10:
+            break
     for name in _PROFILE_DOMAINS.get(domain, _PROFILE_FIELDS):
         entry = fields.get(name)
         if not isinstance(entry, dict) or entry.get("status") != "CONFIRMED":
@@ -77,4 +90,7 @@ def select_profile(profile: dict | None, *, domain: str | None = None, byte_budg
         value = {"value": values, "status": "CONFIRMED", "observedAt": entry.get("observedAt")}
         if len(json.dumps({**selected, name: value}, ensure_ascii=False).encode("utf-8")) <= byte_budget:
             selected[name] = value
-    return {"schemaVersion": 1, "fields": selected}
+    result = {"schemaVersion": 1, "fields": selected}
+    if pending:
+        result["pendingStatements"] = pending
+    return result

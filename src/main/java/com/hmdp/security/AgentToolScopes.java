@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public final class AgentToolScopes {
+    public static final String MEMORY_SELF_READ = "memory:self:read";
+    public static final String MEMORY_EVENT_APPEND = "memory:event:append";
     public static final String SHOP_READ = "shop:read";
     public static final String VOUCHER_READ = "voucher:read";
     public static final String ORDER_SELF_READ = "order:self:read";

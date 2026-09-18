@@ -61,16 +61,18 @@ public class TaskMemoryWorker {
     public void process(TaskMemoryStore.Job job) {
         try {
             List<Map<String, Object>> messages = store.messages(job);
+            List<Map<String,Object>> evidence = store.toolEvidence(job,messages);
             // Version conflicts require re-extraction against fresh state, never replaying an old diff.
             for (int attempt = 0; attempt < 3; attempt++) {
                 TaskMemoryStore.Snapshot base = store.snapshot(job.userId());
-                JsonNode next = base.content();
+                JsonNode archive = base.content();
                 if (!messages.isEmpty()) {
-                    JsonNode diff = agent.extractTaskMemory(merger.extractionView(base.content()), messages);
-                    next = merger.merge(base.content(), diff, messages, LocalDateTime.now());
+                    JsonNode diff = evidence.isEmpty() ? agent.extractTaskMemory(merger.extractionView(base.content()), messages)
+                            : agent.extractTaskMemoryWithEvidence(merger.extractionView(base.content()), messages, evidence);
+                    archive = merger.mergeForArchive(base.content(), diff, messages, evidence);
                 }
                 try {
-                    store.complete(job, base, next, messages);
+                    store.complete(job, base, archive, messages);
                     return;
                 } catch (TaskMemoryStore.VersionConflict conflict) {
                     if (attempt == 2) throw conflict;

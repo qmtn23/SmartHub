@@ -14,7 +14,7 @@ import java.util.*;
 @Component
 public class TaskMemoryMerger {
     private static final Set<String> FIELDS = Set.of("intent", "domains", "entities", "constraints",
-            "facts", "openQuestions", "status", "priority");
+            "facts", "decisions", "openQuestions", "status", "priority");
     private final ObjectMapper json;
     private final TaskMemoryProperties settings;
 
@@ -31,10 +31,21 @@ public class TaskMemoryMerger {
     }
 
     public ObjectNode merge(JsonNode previous, JsonNode diff, List<Map<String, Object>> messages, LocalDateTime now) {
+        return prune(mergeForArchive(previous, diff, messages), now);
+    }
+
+    public ObjectNode mergeForArchive(JsonNode previous, JsonNode diff, List<Map<String, Object>> messages) {
+        return mergeForArchive(previous,diff,messages,List.of());
+    }
+
+    public ObjectNode mergeForArchive(JsonNode previous, JsonNode diff, List<Map<String, Object>> messages,
+                                     List<Map<String,Object>> toolEvidence) {
         if (diff == null || !diff.path("operations").isArray() || diff.path("operations").size() > 16)
             throw new IllegalArgumentException("INVALID_MEMORY_DIFF");
         Map<Long, Map<String, Object>> sources = new HashMap<>();
         messages.forEach(m -> sources.put(((Number) m.get("messageId")).longValue(), m));
+        Map<String,Map<String,Object>> events=new HashMap<>();
+        toolEvidence.forEach(event -> events.put(event.get("eventId").toString(),event));
         ObjectNode result = previous.deepCopy();
         Map<String, ObjectNode> tasks = new LinkedHashMap<>();
         result.withArray("tasks").forEach(t -> tasks.put(t.path("taskId").asText(), (ObjectNode) t));
@@ -60,6 +71,17 @@ public class TaskMemoryMerger {
                 }
             }
             ObjectNode task;
+            JsonNode eventIds=op.path("sourceEventIds");
+            if(!eventIds.isMissingNode() && (!eventIds.isArray() || eventIds.size()>12))
+                throw new IllegalArgumentException("INVALID_MEMORY_EVENTS");
+            for(JsonNode eventId:eventIds) {
+                var event=events.get(eventId.asText());
+                if(event==null) throw new IllegalArgumentException("UNKNOWN_MEMORY_EVENT");
+                LocalDateTime eventTime=LocalDateTime.parse(event.get("observedAt").toString());
+                if(eventTime.isAfter(observed)) observed=eventTime;
+                evidence.addObject().put("eventId",eventId.asText()).put("senderType","TOOL")
+                        .put("observedAt",event.get("observedAt").toString());
+            }
             if (id.isEmpty()) {
                 if (!patch.hasNonNull("intent")) throw new IllegalArgumentException("MISSING_TASK_INTENT");
                 task = json.createObjectNode();
@@ -94,7 +116,7 @@ public class TaskMemoryMerger {
                 task.put("updatedAt", observed.toString());
         }
         result.set("tasks", json.valueToTree(tasks.values()));
-        return prune(result, now);
+        return result;
     }
 
     private void validate(String name, JsonNode value) {

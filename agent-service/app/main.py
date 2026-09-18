@@ -19,6 +19,7 @@ from app.user_profile import UserProfileExtractor
 from app.rag.retriever import KnowledgeRetriever
 from app.rag.merchant import MerchantFaqIndex
 from app.runtime import AppRuntime
+from app.semantic_memory import SemanticMemory
 from app.tools.registry import build_agent_tools
 from app.tools.smarthub_client import SmartHubToolClient
 
@@ -39,6 +40,7 @@ async def lifespan(app: FastAPI):
 
     retriever = KnowledgeRetriever(settings)
     tool_client = SmartHubToolClient(settings)
+    semantic_memory = SemanticMemory(retriever, tool_client, settings)
     merchant_index = MerchantFaqIndex(retriever)
     agent_model = build_chat_model(settings)
     tools_by_agent = build_agent_tools(settings, tool_client, retriever, merchant_index)
@@ -50,11 +52,14 @@ async def lifespan(app: FastAPI):
         tools_by_agent=tools_by_agent,
         checkpointer=checkpointer,
         settings=settings,
+        memory_service=semantic_memory,
     )
     app.state.runtime = AppRuntime(
         redis, checkpointer, graph, retriever, ConversationMemoryGenerator(agent_model)
     )
     app.state.merchant_index = merchant_index
+    app.state.semantic_memory = semantic_memory
+    app.state.memory_index_semaphore = asyncio.Semaphore(1)
     app.state.task_memory = TaskMemoryExtractor(build_chat_model(settings, memory=True, max_retries=0))
     app.state.memory_semaphore = asyncio.Semaphore(2)
     app.state.user_profile = UserProfileExtractor(build_chat_model(settings, profile=True, max_retries=0))

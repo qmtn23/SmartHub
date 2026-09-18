@@ -14,7 +14,8 @@ import java.util.*;
 @Component
 public class UserProfileMerger {
     public static final Set<String> FIELDS = Set.of("cuisinePreference", "tastePreference", "dietaryPreference",
-            "budgetPreference", "areaPreference", "servicePreference", "environmentPreference", "communicationPreference");
+            "budgetPreference", "areaPreference", "servicePreference", "environmentPreference", "communicationPreference",
+            "languagePreference", "codingPreference");
     private final ObjectMapper json;
     private final UserProfileProperties settings;
 

@@ -2,6 +2,8 @@
 
 SmartHub 客服采用工作记忆、情景记忆和用户画像三层架构。三层数据相互独立，由 Master 统一读取并向领域 Agent 分发相关上下文。
 
+可选的[任务生命周期记忆扩展](semantic-memory.md)增加启动语义检索、单步 `search_memory`、模型与工具事件归档、回复落库时的事务写回及独立 Milvus 索引。默认关闭，需先执行 `semantic-memory.sql` 并初始化记忆集合。
+
 ## 工作记忆
 
 当前会话工作记忆使用 Java 业务 Redis 中的 ZSet，键为 `customer:working-memory:v1:{imChatId}`。成员保存消息 ID、短会话 ID、角色、正文和时间，按消息时间排序。

@@ -70,4 +70,6 @@ The optional user-profile layer consumes transactional task-memory events and re
 
 See [用户画像部署与实现说明](docs/user-profile.md) for activation, data flow, update semantics and retry operations.
 
+The optional [task lifecycle memory extension](docs/semantic-memory.md) adds user-scoped semantic recall, transient memory tools, durable model/tool events and a transactional vector outbox. Apply `semantic-memory.sql`, initialize the separate collection with `python -m app.semantic_memory`, then enable the Java and Python semantic-memory flags as described in that guide.
+
 The complete three-level design is documented in [三级记忆架构](docs/memory-architecture.md): Redis ZSet working memory with asynchronous writes and rolling windows, MySQL task-oriented episodic memory and explicit user profiles, plus a dedicated thread pool for synchronous Milvus operations.

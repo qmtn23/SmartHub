@@ -23,4 +23,9 @@ public interface CustomerAgentClient {
 
     com.fasterxml.jackson.databind.JsonNode extractTaskMemory(com.fasterxml.jackson.databind.JsonNode memory,
             List<java.util.Map<String, Object>> messages);
+
+    default com.fasterxml.jackson.databind.JsonNode extractTaskMemoryWithEvidence(com.fasterxml.jackson.databind.JsonNode memory,
+            List<java.util.Map<String, Object>> messages, List<java.util.Map<String, Object>> evidence) {
+        return extractTaskMemory(memory, messages);
+    }
 }

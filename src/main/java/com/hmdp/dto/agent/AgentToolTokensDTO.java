@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @lombok.ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 public class AgentToolTokensDTO {
+    private String memoryToken;
     private String faqKnowledgeToken;
     private String transactionAgentToken;
     private String discoveryAgentToken;

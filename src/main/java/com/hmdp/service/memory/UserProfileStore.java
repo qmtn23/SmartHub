@@ -25,6 +25,8 @@ public class UserProfileStore {
     private final ObjectMapper json;
     private final UserProfileMerger merger;
     private final UserProfileProperties settings;
+    @javax.annotation.Resource
+    private com.hmdp.config.SemanticMemoryProperties semanticSettings;
 
     public UserProfileStore(JdbcTemplate jdbc, org.springframework.transaction.PlatformTransactionManager manager,
                              ObjectMapper json, UserProfileMerger merger, UserProfileProperties settings) {
@@ -106,7 +108,24 @@ public class UserProfileStore {
 
     public JsonNode readForAgent(long userId) {
         if(!settings.isEnabled()) return merger.empty();
-        try { return merger.context(read(userId).content(),LocalDateTime.now()); }
+        try {
+            var profile=merger.context(read(userId).content(),LocalDateTime.now());
+            if(semanticSettings!=null && semanticSettings.isEnabled()) {
+                // Pending source statements are data, not pre-approved profile patches.
+                var statements=jdbc.queryForList("SELECT m.message_id AS messageId,m.content,m.create_time AS observedAt "
+                        + "FROM tb_customer_chat_message m LEFT JOIN tb_customer_profile_receipt r ON r.message_id=m.message_id "
+                        + "WHERE m.user_id=? AND m.sender_type='USER' AND r.message_id IS NULL "
+                        + "AND NOT EXISTS (SELECT 1 FROM tb_customer_profile_job j WHERE j.user_id=m.user_id AND j.status='DONE' "
+                        + "AND FIND_IN_SET(CAST(m.message_id AS CHAR),REPLACE(REPLACE(REPLACE(j.source_message_ids,'[',''),']',''),' ',''))>0) "
+                        + "AND m.create_time>=DATE_SUB(NOW(),INTERVAL 7 DAY) "
+                        + "AND CHAR_LENGTH(m.content)<=1000 AND m.content REGEXP '以后|今后|平时|一直|记住|忘记|忘掉|不要再|清除|删除|不再' "
+                        + "ORDER BY m.create_time DESC,m.message_id DESC LIMIT 10",userId);
+                Collections.reverse(statements);
+                if(!statements.isEmpty()) ((com.fasterxml.jackson.databind.node.ObjectNode)profile)
+                        .set("pendingStatements",json.valueToTree(statements));
+            }
+            return profile;
+        }
         catch(RuntimeException e) {
             log.warn("画像读取失败，本轮使用无画像模式: {}",e.getClass().getSimpleName());
             return merger.empty();
@@ -158,6 +177,9 @@ public class UserProfileStore {
                     next.toString(),batch.userId(),base.version())!=1) throw new VersionConflict();
             for(long version:batch.versions()) jdbc.update("UPDATE tb_customer_profile_job SET status='DONE',lease_id=NULL,lease_until=NULL,"
                     + "error_code=NULL,update_time=NOW() WHERE user_id=? AND memory_version=? AND lease_id=?",batch.userId(),version,batch.lease());
+            if(semanticSettings!=null && semanticSettings.isEnabled())
+                for(long messageId:batch.sourceIds()) jdbc.update("INSERT IGNORE INTO tb_customer_profile_receipt(message_id,user_id,processed_at) "
+                        + "VALUES(?,?,NOW())",messageId,batch.userId());
         });
     }
 

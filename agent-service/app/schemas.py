@@ -33,6 +33,7 @@ class RecentMessage(ApiModel):
 
 
 class ToolAccessTokens(ApiModel):
+    memory_token: str | None = Field(default=None, min_length=1)
     faq_knowledge_token: str | None = Field(default=None, min_length=1)
     transaction_agent_token: str | None = Field(default=None, min_length=1)
     discovery_agent_token: str | None = Field(default=None, min_length=1)
@@ -286,6 +287,7 @@ class ActionOutcome(ApiModel):
 
 
 class AgentRunResumeRequest(ApiModel):
+    memory_token: str | None = Field(default=None, min_length=1)
     request_id: str
     thread_id: str
     action_request_id: str

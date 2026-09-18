@@ -375,6 +375,8 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
             agentRequest.setPendingAction(actionService.toPendingContext(
                     actionService.findActive(userMessage.getUserId(), userMessage.getImChatId())));
             AgentToolTokensDTO toolTokens = new AgentToolTokensDTO();
+            toolTokens.setMemoryToken(tokenService.issue(toolContext, java.util.Set.of(
+                    AgentToolScopes.MEMORY_SELF_READ, AgentToolScopes.MEMORY_EVENT_APPEND)));
             toolTokens.setFaqKnowledgeToken(tokenService.issue(toolContext, Collections.singleton("faq:read")));
             toolTokens.setShopAgentToken(tokenService.issue(toolContext, AgentToolScopes.shopAgentScopes()));
             toolTokens.setVoucherAgentToken(tokenService.issue(toolContext, AgentToolScopes.voucherAgentScopes()));
@@ -474,6 +476,9 @@ public class CustomerChatServiceImpl implements ICustomerChatService {
             execution.getOutcome().setMessage("订单状态已变化，请点击转人工入口继续处理。");
         }
         AgentRunResumeRequestDTO resume = new AgentRunResumeRequestDTO();
+        resume.setMemoryToken(tokenService.issue(new CustomerToolContext(userMessage.getUserId(),
+                userMessage.getImChatId(), userMessage.getChatId(), userMessage.getMessageId()),
+                java.util.Set.of(AgentToolScopes.MEMORY_SELF_READ, AgentToolScopes.MEMORY_EVENT_APPEND)));
         resume.setRequestId(action.getRequestId());
         resume.setThreadId(String.valueOf(action.getChatId()));
         resume.setActionRequestId(action.getActionRequestId());

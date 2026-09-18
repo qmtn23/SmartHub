@@ -43,6 +43,7 @@ customer-memory:
   max-active-tasks: 5
   max-attempts: 5
 customer-working-memory:
+  # Conversation windows remain separate from run checkpoints and semantic memory.
   enabled: ${CUSTOMER_WORKING_MEMORY_ENABLED:true}
   ttl-hours: 24
   rolling-threshold: 30
@@ -53,6 +54,11 @@ customer-profile:
   confirmed-ttl-days: 90
   batch-events: 3
   coalesce-seconds: 60
+  max-attempts: 5
+customer-semantic-memory:
+  enabled: ${CUSTOMER_SEMANTIC_MEMORY_ENABLED:false}
+  poll-interval-ms: ${CUSTOMER_SEMANTIC_MEMORY_POLL_INTERVAL_MS:5000}
+  retention-days: ${CUSTOMER_SEMANTIC_MEMORY_RETENTION_DAYS:90}
   max-attempts: 5
 customer-actions:
   cancel-enabled: ${CUSTOMER_ACTION_CANCEL_ENABLED:false}

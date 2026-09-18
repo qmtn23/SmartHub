@@ -25,6 +25,10 @@ class CustomerServiceState(TypedDict, total=False):
     consultation_context: dict[str, Any]
     long_term_summary: str
     user_profile: dict[str, Any]
+    semantic_memory_active: bool
+    retrieved_memories: list[dict[str, Any]]
+    memory_retrieval_status: str
+    task_summary: dict[str, Any]
     recent_messages: list[dict[str, Any]]
     previous_active_agent: str | None
     previous_active_scene: str | None

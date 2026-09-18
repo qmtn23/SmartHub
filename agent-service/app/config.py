@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     milvus_token: str = ""
     milvus_collection: str = "smarthub_customer_knowledge"
     merchant_faq_collection: str = "smarthub_merchant_faq"
+    semantic_memory_enabled: bool = False
+    memory_collection: str = "smarthub_customer_memory_v1"
+    memory_retrieval_timeout_seconds: float = Field(default=5.0, gt=0, le=15)
+    memory_context_bytes: int = Field(default=9000, ge=1000, le=24000)
+    memory_model_context_bytes: int = Field(default=48000, ge=24000, le=128000)
+    memory_min_score: float = Field(default=0.45, ge=0, le=1)
     faq_index_service_key: str = ""
     knowledge_dir: Path = Field(default=Path("/knowledge/customer-service"))
     retrieval_top_k: int = 4

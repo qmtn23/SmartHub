@@ -24,6 +24,8 @@ public class TaskMemoryStore {
     private final TaskMemoryProperties settings;
     @javax.annotation.Resource
     private UserProfileStore userProfiles;
+    @javax.annotation.Resource
+    private SemanticMemoryStore semanticMemories;
 
     public TaskMemoryStore(JdbcTemplate jdbc, org.springframework.transaction.PlatformTransactionManager manager,
                            ObjectMapper json, TaskMemoryMerger merger, TaskMemoryProperties settings) {
@@ -124,6 +126,34 @@ public class TaskMemoryStore {
     }
 
     public void complete(Job job, Snapshot base, JsonNode next, List<Map<String, Object>> messages) {
+        complete(job, base, merger.prune(next, LocalDateTime.now()), messages, next);
+    }
+
+    public List<Map<String,Object>> toolEvidence(Job job,List<Map<String,Object>> messages) {
+        if(semanticMemories==null || !semanticMemories.enabled() || messages.isEmpty()) return List.of();
+        List<Object> args=new ArrayList<>(); args.add(job.userId()); args.add(job.chatId());
+        for(var message:messages) args.add(message.get("messageId"));
+        String placeholders=String.join(",",Collections.nCopies(messages.size(),"?"));
+        var rows=jdbc.queryForList("SELECT e.event_id,e.payload,e.create_time FROM tb_customer_memory_event e "
+                + "WHERE e.user_id=? AND e.chat_id=? AND e.event_type='TOOL_RESULT' AND e.user_message_id IN "
+                + "(SELECT COALESCE(m.reply_to_message_id,m.message_id) FROM tb_customer_chat_message m WHERE m.message_id IN ("
+                + placeholders+")) ORDER BY e.create_time DESC LIMIT 30",args.toArray());
+        List<Map<String,Object>> evidence=new ArrayList<>();
+        for(var row:rows) {
+            JsonNode envelope=decode(row.get("payload"));
+            if(envelope.path("parts").asInt()!=1 || envelope.path("json_fragment").asText().length()>8000) continue;
+            JsonNode body=decode(envelope.path("json_fragment").asText());
+            String name=body.path("name").asText("");
+            if(!Set.of("query_shop_by_id","search_shops_by_name","query_vouchers_by_shop_id",
+                    "query_current_voucher","query_current_shop","query_current_user_orders",
+                    "recommend_shops_by_type","query_hot_blogs","search_platform_knowledge","search_merchant_faq").contains(name)) continue;
+            evidence.add(Map.of("eventId",row.get("event_id"),"observedAt",row.get("create_time").toString().replace(' ','T'),"result",body));
+            if(evidence.size()==12) break;
+        }
+        return evidence;
+    }
+
+    public void complete(Job job, Snapshot base, JsonNode next, List<Map<String, Object>> messages, JsonNode archive) {
         tx.executeWithoutResult(status -> {
             List<Map<String, Object>> lease = jdbc.queryForList("SELECT chat_id FROM tb_customer_memory_job "
                             + "WHERE chat_id=? AND user_id=? AND lease_id=? AND status='RUNNING' AND lease_until>NOW() FOR UPDATE",
@@ -140,6 +170,7 @@ public class TaskMemoryStore {
                 cursor = Math.max(cursor, id);
             }
             if (userProfiles != null) userProfiles.enqueue(job.userId(), base.version() + 1, messages);
+            if (semanticMemories != null) semanticMemories.capture(job.userId(), archive);
             jdbc.update("UPDATE tb_customer_memory_job SET status='DONE',last_msg_id=GREATEST(last_msg_id,?), "
                             + "lease_id=NULL,lease_until=NULL,attempts=0,error_code=NULL,update_time=NOW() WHERE chat_id=? AND lease_id=?",
                     cursor, job.chatId(), job.lease());

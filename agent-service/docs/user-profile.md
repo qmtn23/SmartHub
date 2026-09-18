@@ -32,6 +32,8 @@ Java 再次验证字段白名单、值长度、引用消息归属和逐字原话
 | servicePreference | 长期预约、排队等服务要求 |
 | environmentPreference | 安静程度等环境偏好 |
 | communicationPreference | 回复详略、比较和表达方式 |
+| languagePreference | 明确表达的长期回复语言偏好 |
+| codingPreference | 明确表达的长期编码风格要求 |
 
 每个字段最多 6 个值，每个值不超过 120 字符。身份信息、画像置信度、生命周期和版本不能由模型写入。暂不支持 INFERRED 画像。
 

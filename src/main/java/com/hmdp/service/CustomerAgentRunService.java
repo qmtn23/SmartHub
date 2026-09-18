@@ -33,6 +33,15 @@ public class CustomerAgentRunService {
     private final ObjectMapper objectMapper;
     @javax.annotation.Resource
     private com.hmdp.service.memory.WorkingMemoryService workingMemory;
+    @javax.annotation.Resource
+    private com.hmdp.service.memory.TaskMemoryStore taskMemories;
+    @javax.annotation.Resource
+    private com.hmdp.config.TaskMemoryProperties memorySettings;
+
+    private void enqueueMemory(CustomerChatMessage message) {
+        if (taskMemories != null && memorySettings != null && memorySettings.isEnabled())
+            taskMemories.enqueue(message.getUserId(), message.getImChatId(), message.getChatId());
+    }
 
     public CustomerAgentRunService(CustomerAgentRunMapper runMapper,
                                    CustomerChatMessageMapper messageMapper,
@@ -115,6 +124,7 @@ public class CustomerAgentRunService {
     public void completeSuccess(String runId, AgentRunResponseDTO response,
                                 CustomerChatMessage assistantMessage, CustomerChat chat) {
         messageMapper.insert(assistantMessage);
+        enqueueMemory(assistantMessage);
         if (workingMemory != null) workingMemory.appendAfterCommit(assistantMessage);
         chatMapper.updateById(chat);
         CustomerAgentRun update = auditUpdate(runId, response)
@@ -130,6 +140,7 @@ public class CustomerAgentRunService {
                                 CustomerChatMessage assistantMessage, CustomerChat chat,
                                 String actionStatus) {
         messageMapper.insert(assistantMessage);
+        enqueueMemory(assistantMessage);
         if (workingMemory != null) workingMemory.appendAfterCommit(assistantMessage);
         chatMapper.updateById(chat);
         CustomerAgentRun update = auditUpdate(runId, response)

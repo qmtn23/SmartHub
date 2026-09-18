@@ -11,6 +11,8 @@ from langgraph.types import Command
 from app.config import get_settings
 from app.task_memory import TaskMemoryRequest, TaskMemoryDiff
 from app.user_profile import ProfileRequest, ProfileDiff
+from app.semantic_memory import MemoryIndexRequest
+from app.memory_context import MemoryAuditHandler
 from app.graph.builder import (
     AllAgentTasksFailedError, RouterInvalidResponseError,
     SupervisorInvalidPlanError, SupervisorInvalidReviewError,
@@ -138,6 +140,20 @@ async def user_profile_diff(
         raise HTTPException(status_code=503, detail="user profile extraction failed") from error
 
 
+@router.post("/v1/customer-service/memory/index")
+async def index_memory(payload: MemoryIndexRequest, request: Request,
+                       x_agent_service_key: str | None = Header(default=None)) -> dict:
+    _require_service_key(x_agent_service_key)
+    if not get_settings().semantic_memory_enabled:
+        raise HTTPException(status_code=503, detail="semantic memory disabled")
+    try:
+        async with request.app.state.memory_index_semaphore:
+            await request.app.state.runtime.retriever.run_sync(request.app.state.semantic_memory.index, payload)
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="memory indexing failed") from error
+    return {"indexed": True, "memory_id": payload.memory_id, "version": payload.version}
+
+
 @router.get("/health/live")
 async def liveness() -> dict[str, str]:
     return {"status": "UP"}
@@ -196,7 +212,13 @@ async def run_customer_service(
     if not acquired:
         raise HTTPException(status_code=409, detail="RUN_IN_PROGRESS")
 
-    run_id = uuid.uuid4().hex
+    # Reuse the checkpoint identity when an HTTP retry follows a process failure.
+    run_id_key = f"agent:v5:run:{payload.request_id}:id"
+    await runtime.redis.set(run_id_key, uuid.uuid4().hex, ex=settings.checkpoint_ttl_seconds, nx=True)
+    run_id = await runtime.redis.get(run_id_key)
+    if not run_id:
+        await runtime.redis.delete(lock_key)
+        raise HTTPException(status_code=503, detail="RUN_ID_UNAVAILABLE")
     started_at = time.perf_counter()
     latency_attributes = {"outcome": "error", "mode": "unknown"}
     with tracer.start_as_current_span("customer_service.run") as span:
@@ -226,6 +248,8 @@ async def run_customer_service(
             "order_agent": scoped_tokens.get("order_agent_token") or transaction_token,
             "refund_agent": scoped_tokens.get("refund_agent_token") or transaction_token,
         }
+        if scoped_tokens.get("memory_token"):
+            tool_tokens["memory"] = scoped_tokens["memory_token"]
         checkpoint_thread_id = f"{payload.thread_id}:{run_id}"
         graph_config = {
             "configurable": {
@@ -234,6 +258,8 @@ async def run_customer_service(
             },
             "recursion_limit": settings.graph_recursion_limit,
         }
+        if settings.semantic_memory_enabled and tool_tokens.get("memory"):
+            graph_config["callbacks"] = [MemoryAuditHandler(request.app.state.semantic_memory, tool_tokens["memory"], run_id)]
         try:
             result = None
             invoke_input = graph_input
@@ -361,7 +387,7 @@ async def resume_customer_service(
                 Command(resume={"action_outcome": payload.action_outcome.model_dump(mode="python")}),
                 config=graph_config,
                 context={
-                    "tool_access_tokens": {}, "request_id": payload.request_id,
+                    "tool_access_tokens": {"memory": payload.memory_token} if payload.memory_token else {}, "request_id": payload.request_id,
                     "result_cache": runtime.redis, "result_ttl_seconds": settings.result_ttl_seconds,
                     "parallel_semaphore": asyncio.Semaphore(settings.max_parallel_agents),
                 },

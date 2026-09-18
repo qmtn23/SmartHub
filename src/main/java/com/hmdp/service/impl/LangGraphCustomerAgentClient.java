@@ -110,6 +110,12 @@ public class LangGraphCustomerAgentClient implements CustomerAgentClient {
     }
 
     @Override
+    public JsonNode extractTaskMemoryWithEvidence(JsonNode memory, List<Map<String,Object>> messages, List<Map<String,Object>> evidence) {
+        return postMemoryDiff("/v1/customer-service/memory/task-diff",
+                Map.of("memory",memory,"messages",messages,"toolEvidence",evidence));
+    }
+
+    @Override
     public JsonNode extractUserProfile(JsonNode profile, JsonNode tasks, List<Map<String, Object>> messages) {
         return postMemoryDiff("/v1/customer-service/memory/profile-diff",
                 Map.of("profile", profile, "tasks", tasks, "messages", messages));
